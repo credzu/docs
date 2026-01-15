@@ -1,0 +1,64 @@
+---
+title: "score_update"
+description: "Sent every 45 days with credit score improvement data"
+---
+
+## Overview
+
+The `score_update` event is sent at approximately 45-day intervals with verified credit score improvement data. This is the primary way partners track borrower progress toward mortgage readiness.
+
+## When It's Triggered
+
+- Approximately every 45 days after escrow is funded
+- When a new credit pull is completed
+- Includes verified score gains across all three bureaus
+
+## Payload
+
+```json
+{
+  "event": "score_update",
+  "timestamp": "2025-03-04T10:00:00Z",
+  "lead_id": 44921,
+  "partner_lead_id": "FBHL-55672",
+  "details": {
+    "experian_gain": 21,
+    "equifax_gain": 17,
+    "transunion_gain": 19,
+    "estimated_time_remaining": "45-90 days"
+  }
+}
+```
+
+## Fields
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `event` | string | Always `"score_update"` |
+| `timestamp` | string | ISO 8601 timestamp |
+| `lead_id` | integer | Credzu's unique identifier |
+| `partner_lead_id` | string | Your internal ID (if provided) |
+| `details.experian_gain` | integer | Points gained on Experian since last update |
+| `details.equifax_gain` | integer | Points gained on Equifax since last update |
+| `details.transunion_gain` | integer | Points gained on TransUnion since last update |
+| `details.estimated_time_remaining` | string | Estimated time until mortgage-ready (e.g., "45-90 days") |
+
+## Recommended Actions
+
+- Update your dashboard with the score improvement data
+- Track cumulative gains over time
+- Use `estimated_time_remaining` to forecast when the borrower may return
+- Consider re-engaging the loan officer when gains are significant
+
+## Example Timeline
+
+| Update | Experian | Equifax | TransUnion | Total Gain |
+|--------|----------|---------|------------|------------|
+| Initial | 580 | 575 | 570 | — |
+| 45 days | +21 | +17 | +19 | +57 |
+| 90 days | +18 | +22 | +15 | +112 |
+| 135 days | +12 | +14 | +16 | +154 |
+
+<Info>
+Score updates are based on verified credit pulls, not estimates. Credzu's escrow model ensures that credit repair providers are only paid for actual, verified improvements.
+</Info>

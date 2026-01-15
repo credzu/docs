@@ -1,0 +1,86 @@
+---
+title: "mortgage_ready"
+description: "Sent when the borrower meets credit criteria and is ready to return"
+---
+
+## Overview
+
+The `mortgage_ready` event is the **most important webhook** for partners. It indicates that the borrower has achieved the credit score improvements needed to qualify for a mortgage and is ready to return to the loan officer.
+
+<Warning>
+This event requires immediate action. The borrower is ready to proceed with their loan application.
+</Warning>
+
+## When It's Triggered
+
+- Borrower's credit scores meet mortgage qualification criteria
+- Credit repair goals have been achieved
+- Borrower is ready to re-engage with the loan process
+
+## Payload
+
+```json
+{
+  "event": "mortgage_ready",
+  "timestamp": "2025-04-18T10:30:00Z",
+  "lead_id": 44921,
+  "partner_lead_id": "FBHL-55672",
+  "details": {
+    "verified_scores": {
+      "experian": 645,
+      "equifax": 640,
+      "transunion": 643
+    }
+  }
+}
+```
+
+## Fields
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `event` | string | Always `"mortgage_ready"` |
+| `timestamp` | string | ISO 8601 timestamp |
+| `lead_id` | integer | Credzu's unique identifier |
+| `partner_lead_id` | string | Your internal ID (if provided) |
+| `details.verified_scores.experian` | integer | Current Experian score |
+| `details.verified_scores.equifax` | integer | Current Equifax score |
+| `details.verified_scores.transunion` | integer | Current TransUnion score |
+
+## Recommended Actions
+
+<Steps>
+  <Step title="Alert the loan officer immediately">
+    This is the highest priority event. The loan officer should contact the borrower within 24-48 hours.
+  </Step>
+  <Step title="Update CRM status">
+    Mark the lead as "Mortgage Ready" or "Ready to Close"
+  </Step>
+  <Step title="Prepare loan documentation">
+    The borrower's credit profile has improved - begin preparing for the new application.
+  </Step>
+  <Step title="Schedule follow-up">
+    Ensure the borrower is contacted promptly to maintain momentum.
+  </Step>
+</Steps>
+
+## Why This Event Matters
+
+This event represents the completion of the "credit rescue loop":
+
+1. ✅ Loan was initially declined due to credit
+2. ✅ Borrower was referred to Credzu
+3. ✅ Credit scores improved over time
+4. ✅ **Borrower is now ready to close the loan**
+
+<Tip>
+Borrowers who receive prompt follow-up after the `mortgage_ready` event have significantly higher close rates. Speed matters.
+</Tip>
+
+## Verified Scores
+
+Unlike `score_update` events which show gains, the `mortgage_ready` event includes **actual verified scores**. These scores are based on recent credit pulls and can be used to:
+
+- Determine loan product eligibility (FHA, VA, Conventional)
+- Calculate potential interest rates
+- Assess overall creditworthiness

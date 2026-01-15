@@ -1,0 +1,140 @@
+---
+title: "Get Lead"
+api: "POST /get-lead"
+description: "Retrieve the current status and details of a specific lead"
+---
+
+## Overview
+
+Allows partners to fetch the current state of a specific lead by its Credzu lead ID.
+
+## Request Body
+
+<ParamField body="lead_id" type="integer" required>
+  The Credzu lead ID returned when the lead was created
+</ParamField>
+
+## Response
+
+<ResponseField name="success" type="boolean">
+  `true` if the lead was found
+</ResponseField>
+
+<ResponseField name="data" type="object">
+  Lead details object
+
+  <Expandable title="Lead object properties">
+    <ResponseField name="data.lead_id" type="integer">
+      Credzu's unique identifier
+    </ResponseField>
+
+    <ResponseField name="data.partner_lead_id" type="string">
+      Your internal ID for this lead
+    </ResponseField>
+
+    <ResponseField name="data.first_name" type="string">
+      Borrower's first name
+    </ResponseField>
+
+    <ResponseField name="data.last_name" type="string">
+      Borrower's last name
+    </ResponseField>
+
+    <ResponseField name="data.email" type="string">
+      Borrower's email
+    </ResponseField>
+
+    <ResponseField name="data.phone" type="string">
+      Borrower's phone
+    </ResponseField>
+
+    <ResponseField name="data.status" type="string">
+      Current milestone status (e.g., `lead_received`, `contract_signed`, `mortgage_ready`)
+    </ResponseField>
+
+    <ResponseField name="data.fico_range" type="string">
+      FICO score range if provided
+    </ResponseField>
+
+    <ResponseField name="data.loan_officer_id" type="string">
+      Loan officer identifier if provided
+    </ResponseField>
+
+    <ResponseField name="data.created_at" type="string">
+      Lead creation timestamp
+    </ResponseField>
+
+    <ResponseField name="data.updated_at" type="string">
+      Last update timestamp
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<RequestExample>
+
+```bash cURL
+curl -X POST https://credzu.com/wp-json/credzu/v1/get-lead \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Credzu-Key YOUR_API_KEY" \
+  -d '{
+    "lead_id": 44921
+  }'
+```
+
+```php PHP
+<?php
+$ch = curl_init("https://credzu.com/wp-json/credzu/v1/get-lead");
+curl_setopt_array($ch, array(
+    CURLOPT_POST => true,
+    CURLOPT_RETURNTRANSFER => true,
+    CURLOPT_HTTPHEADER => array(
+        "Content-Type: application/json",
+        "Authorization: Credzu-Key YOUR_API_KEY"
+    ),
+    CURLOPT_POSTFIELDS => json_encode(array("lead_id" => 44921))
+));
+
+$response = json_decode(curl_exec($ch), true);
+curl_close($ch);
+print_r($response);
+```
+
+</RequestExample>
+
+<ResponseExample>
+
+```json 200
+{
+  "success": true,
+  "data": {
+    "id": 44921,
+    "partner_id": 1,
+    "partner_lead_id": "FBHL-55672",
+    "first_name": "John",
+    "last_name": "Smith",
+    "email": "john.smith@example.com",
+    "phone": "555-333-2222",
+    "fico_range": "580-619",
+    "loan_officer_id": "A.GLADSTONE",
+    "status": "contract_signed",
+    "created_at": "2025-01-15 10:30:00",
+    "updated_at": "2025-01-18 14:22:00"
+  }
+}
+```
+
+```json 404
+{
+  "success": false,
+  "error": {
+    "code": "NOT_FOUND",
+    "message": "Lead not found"
+  }
+}
+```
+
+</ResponseExample>
+
+<Note>
+You can only retrieve leads that belong to your partner account. Attempting to access another partner's leads will return a `NOT_FOUND` error.
+</Note>

@@ -8,6 +8,19 @@
     "dark": "#1e3a8a"
   },
   "favicon": "/favicon.svg",
+  "api": {
+    "mdx": {
+      "server": "https://credzu.com/wp-json/credzu/v1",
+      "auth": {
+        "method": "key",
+        "name": "Authorization",
+        "inputPrefix": "Credzu-Key "
+      }
+    },
+    "playground": {
+      "mode": "interactive"
+    }
+  },
   "navigation": {
     "tabs": [
       {
@@ -17,7 +30,8 @@
             "group": "Getting Started",
             "pages": [
               "index",
-              "authentication"
+              "authentication",
+              "errors"
             ]
           }
         ]
@@ -29,6 +43,30 @@
             "group": "Overview",
             "pages": [
               "api-reference/introduction"
+            ]
+          },
+          {
+            "group": "Endpoints",
+            "pages": [
+              "api-reference/endpoints/ping",
+              "api-reference/endpoints/create-lead",
+              "api-reference/endpoints/get-lead",
+              "api-reference/endpoints/get-events",
+              "api-reference/endpoints/update-partner-info"
+            ]
+          },
+          {
+            "group": "Webhooks",
+            "pages": [
+              "api-reference/webhooks/overview",
+              "api-reference/webhooks/lead-received",
+              "api-reference/webhooks/client-account-created",
+              "api-reference/webhooks/credit-scan-completed",
+              "api-reference/webhooks/client-engaged-in-chat",
+              "api-reference/webhooks/contract-signed",
+              "api-reference/webhooks/escrow-funded",
+              "api-reference/webhooks/score-update",
+              "api-reference/webhooks/mortgage-ready"
             ]
           }
         ]

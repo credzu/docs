@@ -1,0 +1,146 @@
+---
+title: "Get Events"
+api: "POST /get-events"
+description: "Retrieve the event history for a specific lead"
+---
+
+## Overview
+
+Returns the complete history of Credzu events associated with a lead. Use this to see all milestones a borrower has passed through.
+
+## Request Body
+
+<ParamField body="lead_id" type="integer" required>
+  The Credzu lead ID returned when the lead was created
+</ParamField>
+
+## Response
+
+<ResponseField name="success" type="boolean">
+  `true` if events were retrieved
+</ResponseField>
+
+<ResponseField name="data" type="array">
+  Array of event objects, ordered chronologically (oldest first)
+
+  <Expandable title="Event object properties">
+    <ResponseField name="event_name" type="string">
+      The event type (e.g., `lead_received`, `contract_signed`, `score_update`)
+    </ResponseField>
+
+    <ResponseField name="event_payload" type="object">
+      Additional data associated with the event (varies by event type)
+    </ResponseField>
+
+    <ResponseField name="created_at" type="string">
+      Timestamp when the event occurred
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<RequestExample>
+
+```bash cURL
+curl -X POST https://credzu.com/wp-json/credzu/v1/get-events \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Credzu-Key YOUR_API_KEY" \
+  -d '{
+    "lead_id": 44921
+  }'
+```
+
+```php PHP
+<?php
+$ch = curl_init("https://credzu.com/wp-json/credzu/v1/get-events");
+curl_setopt_array($ch, array(
+    CURLOPT_POST => true,
+    CURLOPT_RETURNTRANSFER => true,
+    CURLOPT_HTTPHEADER => array(
+        "Content-Type: application/json",
+        "Authorization: Credzu-Key YOUR_API_KEY"
+    ),
+    CURLOPT_POSTFIELDS => json_encode(array("lead_id" => 44921))
+));
+
+$response = json_decode(curl_exec($ch), true);
+curl_close($ch);
+print_r($response);
+```
+
+</RequestExample>
+
+<ResponseExample>
+
+```json 200
+{
+  "success": true,
+  "data": [
+    {
+      "event_name": "lead_received",
+      "event_payload": {
+        "partner_lead_id": "FBHL-55672"
+      },
+      "created_at": "2025-01-15 10:30:00"
+    },
+    {
+      "event_name": "client_account_created",
+      "event_payload": null,
+      "created_at": "2025-01-15 14:22:00"
+    },
+    {
+      "event_name": "credit_scan_completed",
+      "event_payload": null,
+      "created_at": "2025-01-16 09:15:00"
+    },
+    {
+      "event_name": "contract_signed",
+      "event_payload": null,
+      "created_at": "2025-01-18 11:45:00"
+    },
+    {
+      "event_name": "escrow_funded",
+      "event_payload": null,
+      "created_at": "2025-01-18 14:22:00"
+    },
+    {
+      "event_name": "score_update",
+      "event_payload": {
+        "experian_gain": 21,
+        "equifax_gain": 17,
+        "transunion_gain": 19,
+        "estimated_time_remaining": "45-90 days"
+      },
+      "created_at": "2025-03-04 10:00:00"
+    }
+  ]
+}
+```
+
+```json 400
+{
+  "success": false,
+  "error": {
+    "code": "INVALID_PAYLOAD",
+    "message": "lead_id is required"
+  }
+}
+```
+
+</ResponseExample>
+
+## Event Types
+
+| Event | Description |
+|-------|-------------|
+| `lead_received` | Lead was created in Credzu |
+| `client_account_created` | Borrower logged in and completed onboarding |
+| `credit_scan_completed` | Borrower completed credit scan |
+| `client_engaged_in_chat` | Borrower sent messages in chat |
+| `contract_signed` | Borrower signed service contract |
+| `escrow_funded` | Borrower funded escrow account |
+| `score_update` | Credit score update (includes score gains) |
+| `mortgage_ready` | Borrower meets credit criteria |
+
+<Tip>
+Use this endpoint to build a timeline view of borrower progress in your CRM or LOS system.
+</Tip>

@@ -1,41 +1,131 @@
 ---
 title: API Reference
-description: "Complete reference for the Credzu API"
+description: "Complete reference for the Credzu REST API"
 ---
 
 ## Overview
 
-The Credzu API is organized around REST. Our API accepts JSON-encoded request bodies, returns JSON-encoded responses, and uses standard HTTP response codes.
+The Credzu API is a RESTful JSON-based interface that allows third-party systems (CRM, LOS, lender software, lead managers, and enterprise partners) to securely exchange referral and status information with Credzu.
 
-### Response format
+### Base URL
 
-All responses follow this structure:
+All endpoints follow this pattern:
 
+```
+https://credzu.com/wp-json/credzu/v1/{endpoint}
+```
+
+### Request Format
+
+All requests must include:
+
+```
+Content-Type: application/json
+Authorization: Credzu-Key {YOUR_API_KEY}
+```
+
+### Response Format
+
+All responses are returned as JSON with a consistent structure:
+
+**Success response:**
 ```json
 {
   "success": true,
-  "data": { },
-  "message": "Operation completed successfully"
+  "message": "Operation completed",
+  "data": {}
 }
 ```
 
-### Error handling
+**Error response:**
+```json
+{
+  "success": false,
+  "error": {
+    "code": "ERROR_CODE",
+    "message": "Error description"
+  }
+}
+```
 
-Errors return appropriate HTTP status codes:
+## Available Endpoints
 
-| Status | Description |
-|--------|-------------|
-| `200`  | Success |
-| `400`  | Bad Request - Invalid parameters |
-| `401`  | Unauthorized - Invalid API key |
-| `404`  | Not Found - Resource doesn't exist |
-| `429`  | Rate Limited - Too many requests |
-| `500`  | Server Error |
+### Inbound (Partner → Credzu)
 
-### Rate limits
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `GET` | `/ping` | Health check - verify API is online |
+| `POST` | `/create-lead` | Create a new consumer/lead in Credzu |
+| `POST` | `/get-lead` | Retrieve current status of a lead |
+| `POST` | `/get-events` | Get event history for a lead |
+| `POST` | `/update-partner-info` | Update metadata for an existing lead |
 
-API requests are limited to **100 requests per minute** per API key. If you exceed this limit, you'll receive a `429` response.
+### Outbound (Credzu → Partner)
 
----
+Credzu sends webhook callbacks to your registered endpoint for these events:
 
-*Endpoint documentation coming soon.*
+| Event | Description |
+|-------|-------------|
+| `lead_received` | Lead was successfully created |
+| `client_account_created` | Borrower logged in and completed onboarding |
+| `credit_scan_completed` | Borrower completed credit scan |
+| `contract_signed` | Borrower signed service contract |
+| `escrow_funded` | Borrower funded escrow account |
+| `score_update` | Credit score update (sent every 45 days) |
+| `mortgage_ready` | Borrower meets credit criteria - ready to return |
+
+## End-to-End Workflow
+
+```
+Partner System                         Credzu
+     │                                    │
+     │  POST /create-lead                 │
+     │ ─────────────────────────────────> │
+     │                                    │
+     │  { lead_id: 44921 }                │
+     │ <───────────────────────────────── │
+     │                                    │
+     │                                    │ (Borrower onboards)
+     │                                    │
+     │  Webhook: lead_received            │
+     │ <───────────────────────────────── │
+     │                                    │
+     │  Webhook: client_account_created   │
+     │ <───────────────────────────────── │
+     │                                    │
+     │  Webhook: contract_signed          │
+     │ <───────────────────────────────── │
+     │                                    │
+     │  Webhook: escrow_funded            │
+     │ <───────────────────────────────── │
+     │                                    │
+     │  Webhook: score_update (45 days)   │
+     │ <───────────────────────────────── │
+     │                                    │
+     │  Webhook: mortgage_ready           │
+     │ <───────────────────────────────── │
+     │                                    │
+     │  POST /get-lead (optional)         │
+     │ ─────────────────────────────────> │
+     │                                    │
+```
+
+## Partner Responsibilities
+
+<Steps>
+  <Step title="Include API key in every request">
+    All authenticated endpoints require the `Authorization: Credzu-Key YOUR_API_KEY` header.
+  </Step>
+  <Step title="Send valid JSON">
+    Request bodies must be valid JSON with the correct fields.
+  </Step>
+  <Step title="Store the Credzu lead ID">
+    Save the `lead_id` returned when creating a lead - it's used for status callbacks and lookups.
+  </Step>
+  <Step title="Handle webhooks">
+    Implement a webhook endpoint to receive Credzu status updates and return `200 OK`.
+  </Step>
+  <Step title="Use sandbox first">
+    Test your integration in sandbox before going live.
+  </Step>
+</Steps>

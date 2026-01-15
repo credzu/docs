@@ -1,0 +1,131 @@
+---
+title: Error Handling
+description: "Understanding Credzu API error codes and responses"
+---
+
+## Error Response Format
+
+When an error occurs, the API returns a standardized JSON response:
+
+```json
+{
+  "success": false,
+  "error": {
+    "code": "ERROR_CODE",
+    "message": "Human-readable error description"
+  }
+}
+```
+
+## Error Codes
+
+| Code | HTTP Status | Description |
+|------|-------------|-------------|
+| `AUTH_FAILED` | 401 | Invalid or missing API key |
+| `INVALID_PAYLOAD` | 400 | Missing required fields in request body |
+| `VALIDATION_ERROR` | 400 | Field format is incorrect (e.g., invalid email) |
+| `NOT_FOUND` | 404 | Requested resource (lead ID) doesn't exist |
+| `RATE_LIMITED` | 429 | Too many requests - slow down |
+| `SERVER_ERROR` | 500 | Unexpected server issue |
+
+## Error Examples
+
+### AUTH_FAILED
+
+Missing or invalid API key:
+
+```json
+{
+  "success": false,
+  "error": {
+    "code": "AUTH_FAILED",
+    "message": "Invalid API key"
+  }
+}
+```
+
+### INVALID_PAYLOAD
+
+Required field missing:
+
+```json
+{
+  "success": false,
+  "error": {
+    "code": "INVALID_PAYLOAD",
+    "message": "first_name is required"
+  }
+}
+```
+
+### VALIDATION_ERROR
+
+Field format incorrect:
+
+```json
+{
+  "success": false,
+  "error": {
+    "code": "VALIDATION_ERROR",
+    "message": "Invalid email format"
+  }
+}
+```
+
+### NOT_FOUND
+
+Lead doesn't exist or doesn't belong to your partner account:
+
+```json
+{
+  "success": false,
+  "error": {
+    "code": "NOT_FOUND",
+    "message": "Lead not found"
+  }
+}
+```
+
+### RATE_LIMITED
+
+Exceeded request limits:
+
+```json
+{
+  "success": false,
+  "error": {
+    "code": "RATE_LIMITED",
+    "message": "Too many requests. Please wait before retrying."
+  }
+}
+```
+
+## Rate Limits
+
+Default limits per partner:
+
+| Direction | Limit |
+|-----------|-------|
+| **Inbound** (Partner → Credzu) | 100 requests/minute |
+| **Outbound** (Credzu → Partner webhooks) | 300 callbacks/minute |
+
+<Info>
+If you need higher limits for enterprise volume, contact Credzu support to request increased quotas.
+</Info>
+
+## Best Practices
+
+<Steps>
+  <Step title="Check HTTP status codes">
+    Use HTTP status codes for initial error classification (4xx = client error, 5xx = server error).
+  </Step>
+  <Step title="Parse the error code">
+    Use the `error.code` field to determine the specific error type and handle accordingly.
+  </Step>
+  <Step title="Log the full response">
+    Store the complete error response for debugging and support requests.
+  </Step>
+  <Step title="Implement retry logic">
+    For `SERVER_ERROR` or `RATE_LIMITED`, implement exponential backoff before retrying.
+  </Step>
+</Steps>

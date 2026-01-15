@@ -1,0 +1,117 @@
+---
+title: "Update Partner Info"
+api: "POST /update-partner-info"
+description: "Update metadata for an existing lead"
+---
+
+## Overview
+
+Used when you want to push additional metadata about a lead after the initial creation. This is useful for adding loan product details, property information, or other data that wasn't available at referral time.
+
+## Request Body
+
+<ParamField body="lead_id" type="integer" required>
+  The Credzu lead ID returned when the lead was created
+</ParamField>
+
+<ParamField body="loan_product" type="string">
+  Type of loan product (e.g., `"FHA"`, `"VA"`, `"Conventional"`)
+</ParamField>
+
+<ParamField body="property_state" type="string">
+  Two-letter state code for the property (e.g., `"MO"`, `"CA"`, `"TX"`)
+</ParamField>
+
+<ParamField body="custom_field" type="string">
+  Any additional custom fields can be included - they'll be stored as lead metadata
+</ParamField>
+
+## Response
+
+<ResponseField name="success" type="boolean">
+  `true` if the update was successful
+</ResponseField>
+
+<ResponseField name="message" type="string">
+  Status message
+</ResponseField>
+
+<RequestExample>
+
+```bash cURL
+curl -X POST https://credzu.com/wp-json/credzu/v1/update-partner-info \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Credzu-Key YOUR_API_KEY" \
+  -d '{
+    "lead_id": 44921,
+    "loan_product": "FHA",
+    "property_state": "MO",
+    "salesforce_id": "SF-001234"
+  }'
+```
+
+```php PHP
+<?php
+$ch = curl_init("https://credzu.com/wp-json/credzu/v1/update-partner-info");
+curl_setopt_array($ch, array(
+    CURLOPT_POST => true,
+    CURLOPT_RETURNTRANSFER => true,
+    CURLOPT_HTTPHEADER => array(
+        "Content-Type: application/json",
+        "Authorization: Credzu-Key YOUR_API_KEY"
+    ),
+    CURLOPT_POSTFIELDS => json_encode(array(
+        "lead_id" => 44921,
+        "loan_product" => "FHA",
+        "property_state" => "MO"
+    ))
+));
+
+$response = json_decode(curl_exec($ch), true);
+curl_close($ch);
+print_r($response);
+```
+
+</RequestExample>
+
+<ResponseExample>
+
+```json 200
+{
+  "success": true,
+  "message": "Partner info updated"
+}
+```
+
+```json 404
+{
+  "success": false,
+  "error": {
+    "code": "NOT_FOUND",
+    "message": "Lead not found"
+  }
+}
+```
+
+</ResponseExample>
+
+## Common Use Cases
+
+<CardGroup cols={2}>
+  <Card title="Loan Product Details" icon="file-contract">
+    Add FHA, VA, Conventional, or other loan type information after the initial referral.
+  </Card>
+  <Card title="Property Information" icon="house">
+    Include property state, county, or other location data relevant to the loan.
+  </Card>
+  <Card title="CRM Integration" icon="database">
+    Store Salesforce IDs, HubSpot IDs, or other external system references.
+  </Card>
+  <Card title="Channel Tracking" icon="chart-line">
+    Tag leads with marketing channel or campaign information.
+  </Card>
+</CardGroup>
+
+<Note>
+All custom fields are stored as lead metadata and can be retrieved using the [Get Lead](/api-reference/endpoints/get-lead) endpoint.
+</Note>

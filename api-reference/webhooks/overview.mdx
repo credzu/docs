@@ -1,0 +1,156 @@
+---
+title: "Webhooks Overview"
+description: "Receive real-time status updates as borrowers progress through the credit repair workflow"
+---
+
+## Overview
+
+Credzu sends webhook callbacks (HTTP POST requests) to your registered endpoint whenever a significant event occurs for a lead. This allows your system to stay synchronized with borrower progress without polling.
+
+## How Webhooks Work
+
+1. When you onboard as a partner, you provide Credzu with your **webhook URL**
+2. When events occur for your leads, Credzu sends a POST request to your URL
+3. Your server processes the event and returns a `200 OK` response
+4. If delivery fails, Credzu retries with exponential backoff
+
+## Webhook Payload Structure
+
+All webhook payloads follow this structure:
+
+```json
+{
+  "event": "event_name",
+  "timestamp": "2025-01-22T17:38:12Z",
+  "lead_id": 44921,
+  "partner_lead_id": "FBHL-55672",
+  "details": {}
+}
+```
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `event` | string | The event type (e.g., `contract_signed`, `mortgage_ready`) |
+| `timestamp` | string | ISO 8601 timestamp when the event occurred |
+| `lead_id` | integer | Credzu's unique identifier for the lead |
+| `partner_lead_id` | string | Your internal ID (if provided when creating the lead) |
+| `details` | object | Event-specific data (varies by event type) |
+
+## Available Events
+
+| Event | Description | Priority |
+|-------|-------------|----------|
+| `lead_received` | Lead was successfully created | Low |
+| `client_account_created` | Borrower completed onboarding | Medium |
+| `credit_scan_completed` | Borrower completed credit scan | Medium |
+| `client_engaged_in_chat` | Borrower sent messages | Low |
+| `contract_signed` | Borrower signed service contract | High |
+| `escrow_funded` | Borrower funded escrow account | High |
+| `score_update` | Credit score update (every 45 days) | High |
+| `mortgage_ready` | Borrower is ready to return | **Critical** |
+
+## Implementing Your Webhook Endpoint
+
+Your endpoint must:
+- Accept `POST` requests with `Content-Type: application/json`
+- Return `200 OK` to acknowledge receipt
+- Process events asynchronously if needed (respond quickly, process later)
+
+### Example Implementation (PHP)
+
+```php
+<?php
+// webhook.php
+
+// Read raw POST body
+$raw = file_get_contents("php://input");
+$data = json_decode($raw, true);
+
+// Log for debugging
+file_put_contents("credzu-webhook.log", date("c") . " " . $raw . "\n", FILE_APPEND);
+
+// Validate payload
+if (!isset($data["event"]) || !isset($data["lead_id"])) {
+    http_response_code(400);
+    echo json_encode(array("success" => false, "message" => "Invalid payload"));
+    exit;
+}
+
+// Process event
+switch ($data["event"]) {
+    case "lead_received":
+        // Update CRM to show lead was received
+        break;
+    case "client_account_created":
+        // Borrower is engaged
+        break;
+    case "credit_scan_completed":
+        // Credit data available
+        break;
+    case "contract_signed":
+        // Borrower committed
+        break;
+    case "escrow_funded":
+        // Serious engagement
+        break;
+    case "score_update":
+        // Update dashboard with score improvements
+        $gains = $data["details"];
+        break;
+    case "mortgage_ready":
+        // ALERT LOAN OFFICER - highest priority
+        break;
+}
+
+// Return 200 OK
+http_response_code(200);
+echo json_encode(array("success" => true));
+```
+
+## Retry Logic
+
+If your endpoint fails to respond with `200 OK`:
+
+| Attempt | Delay | Action |
+|---------|-------|--------|
+| 1 | Immediate | First attempt |
+| 2 | 5 seconds | Retry |
+| 3 | 20 seconds | Retry |
+| 4 | 60 seconds | Final retry |
+
+After 3 failed retries:
+- The webhook is marked as `failed`
+- Credzu support is notified
+- You can retrieve missed events using [Get Events](/api-reference/endpoints/get-events)
+
+<Warning>
+Ensure your webhook endpoint is reliable and responds quickly. Slow responses or downtime can cause missed events.
+</Warning>
+
+## Security Considerations
+
+<Steps>
+  <Step title="Use HTTPS">
+    Your webhook URL must use HTTPS for secure data transmission.
+  </Step>
+  <Step title="Validate the payload">
+    Check that required fields (`event`, `lead_id`) are present before processing.
+  </Step>
+  <Step title="Verify the lead belongs to you">
+    Cross-reference the `partner_lead_id` with your records.
+  </Step>
+  <Step title="Process asynchronously">
+    Return `200 OK` immediately, then process the event in the background.
+  </Step>
+</Steps>
+
+## Testing Webhooks
+
+In the **sandbox environment**, you can:
+- Trigger simulated events for your test leads
+- Verify your webhook endpoint is receiving and processing events correctly
+- Test retry logic by temporarily returning error responses
+
+<Info>
+Contact Credzu support to configure your webhook URL or update it for a new integration.
+</Info>

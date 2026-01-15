@@ -1,0 +1,64 @@
+---
+title: "Ping"
+api: "GET /ping"
+description: "Health check endpoint to verify the API is online"
+---
+
+## Overview
+
+Simple health check endpoint to verify the Credzu API is online and responding. This endpoint does not require authentication.
+
+<Note>
+This is the only endpoint that doesn't require an API key.
+</Note>
+
+## Response
+
+<ResponseField name="success" type="boolean">
+  Always `true` when the API is online
+</ResponseField>
+
+<ResponseField name="message" type="string">
+  Status message confirming the API is operational
+</ResponseField>
+
+<ResponseField name="version" type="string">
+  Current API version
+</ResponseField>
+
+## Example Response
+
+```json
+{
+  "success": true,
+  "message": "Credzu API online",
+  "version": "1.0.0"
+}
+```
+
+<RequestExample>
+
+```bash cURL
+curl https://credzu.com/wp-json/credzu/v1/ping
+```
+
+```php PHP
+<?php
+$response = file_get_contents("https://credzu.com/wp-json/credzu/v1/ping");
+$data = json_decode($response, true);
+print_r($data);
+```
+
+</RequestExample>
+
+<ResponseExample>
+
+```json 200
+{
+  "success": true,
+  "message": "Credzu API online",
+  "version": "1.0.0"
+}
+```
+
+</ResponseExample>

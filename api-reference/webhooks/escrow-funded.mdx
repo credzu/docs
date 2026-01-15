@@ -1,0 +1,47 @@
+---
+title: "escrow_funded"
+description: "Sent when the borrower funds their pay-per-point escrow account"
+---
+
+## Overview
+
+The `escrow_funded` event is sent when the borrower has deposited funds into their Credzu escrow account. This is a critical milestone indicating serious financial commitment - the borrower is paying for credit repair services.
+
+## When It's Triggered
+
+- Borrower has deposited funds into their escrow account
+- Payment has been verified
+- Credit repair work can proceed with funded backing
+
+## Payload
+
+```json
+{
+  "event": "escrow_funded",
+  "timestamp": "2025-01-18T14:22:00Z",
+  "lead_id": 44921,
+  "partner_lead_id": "FBHL-55672",
+  "details": {}
+}
+```
+
+## Fields
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `event` | string | Always `"escrow_funded"` |
+| `timestamp` | string | ISO 8601 timestamp |
+| `lead_id` | integer | Credzu's unique identifier |
+| `partner_lead_id` | string | Your internal ID (if provided) |
+| `details` | object | Empty for this event |
+
+## Recommended Actions
+
+- Update CRM status to "Escrow Funded" or "Active"
+- This is a high-commitment milestone - mark the borrower as highly engaged
+- Alert the loan officer that the borrower is financially invested
+- Expect score updates every 45 days going forward
+
+<Tip>
+Escrow funding is one of the strongest signals of borrower commitment. These borrowers are statistically more likely to complete the credit repair process and become mortgage-ready.
+</Tip>

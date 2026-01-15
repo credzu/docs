@@ -1,0 +1,47 @@
+---
+title: "contract_signed"
+description: "Sent when the borrower signs the Credzu service contract"
+---
+
+## Overview
+
+The `contract_signed` event is sent when the borrower has accepted and signed the Credzu service contract. This is a high-value event indicating serious commitment from the borrower.
+
+## When It's Triggered
+
+- Borrower has reviewed and agreed to the service terms
+- Legal contract is now in place
+- Borrower is officially enrolled in the credit repair program
+
+## Payload
+
+```json
+{
+  "event": "contract_signed",
+  "timestamp": "2025-01-18T11:45:00Z",
+  "lead_id": 44921,
+  "partner_lead_id": "FBHL-55672",
+  "details": {}
+}
+```
+
+## Fields
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `event` | string | Always `"contract_signed"` |
+| `timestamp` | string | ISO 8601 timestamp |
+| `lead_id` | integer | Credzu's unique identifier |
+| `partner_lead_id` | string | Your internal ID (if provided) |
+| `details` | object | Empty for this event |
+
+## Recommended Actions
+
+- Update CRM status to "Contract Signed" or "Enrolled"
+- This is a strong engagement signal - the borrower is committed
+- Notify the loan officer of the commitment milestone
+- Expect `escrow_funded` event to follow shortly
+
+<Info>
+Contract signing typically precedes escrow funding. Once both events have occurred, the borrower is fully engaged in the credit repair process.
+</Info>

@@ -3,39 +3,87 @@ title: Authentication
 description: "How to authenticate with the Credzu API"
 ---
 
-## API Keys
+## API Key Authentication
 
-All API requests require authentication using an API key. Include your API key in the request header:
+All API requests require authentication using a Partner API Key. Credzu uses a simple, secure key-based authentication that's consistent with systems like Shape, TotalExpert, and Velocify.
 
-```bash
-Authorization: Bearer YOUR_API_KEY
+### Header Format
+
+Include your API key in the `Authorization` header:
+
+```
+Authorization: Credzu-Key {YOUR_API_KEY}
 ```
 
-### Getting your API key
+### Example Request
 
-1. Log in to your [Credzu Dashboard](https://credzu.com)
-2. Navigate to **Settings** > **API Keys**
-3. Generate a new API key
+```bash
+curl -X POST https://credzu.com/wp-json/credzu/v1/create-lead \
+  -H "Authorization: Credzu-Key pk_live_abc123xyz789" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "first_name": "John",
+    "last_name": "Smith",
+    "email": "john.smith@example.com",
+    "phone": "555-123-4567"
+  }'
+```
+
+### Getting Your API Key
+
+Each referral partner receives:
+- **Production API key** - For live transactions
+- **Sandbox API key** (optional) - For testing
+
+Contact Credzu to obtain your API credentials. Keys can be rotated at any time by Credzu staff.
 
 <Warning>
-Keep your API keys secure. Do not share them in public repositories or client-side code.
+Keep your API keys secure. Never share them in public repositories, client-side code, or unsecured channels.
 </Warning>
 
-### Example request
+## Environments
 
-```bash
-curl -X GET https://api.credzu.com/v1/transactions \
-  -H "Authorization: Bearer YOUR_API_KEY" \
-  -H "Content-Type: application/json"
-```
-
-### Environments
-
-| Environment | Base URL |
-|-------------|----------|
-| Production  | `https://api.credzu.com/v1` |
-| Sandbox     | `https://sandbox.api.credzu.com/v1` |
+| Environment | Base URL | Purpose |
+|-------------|----------|---------|
+| **Production** | `https://credzu.com/wp-json/credzu/v1` | Live data, real credit scans, actual escrow transactions |
+| **Sandbox** | `https://sandbox.credzu.com/wp-json/credzu/v1` | Test data, simulated events, mock score updates |
 
 <Info>
-Use the sandbox environment for testing. No real transactions are processed.
+Always use the sandbox environment for initial integration testing before going live.
 </Info>
+
+## Security Requirements
+
+### Transport Security
+- **HTTPS required** - All API requests must use HTTPS
+- **TLS 1.2+** - Minimum TLS version supported
+
+### Data Protection
+Partners must protect:
+- API keys
+- Returned lead IDs
+- Any score or milestone data received via webhooks
+
+<Note>
+No full credit reports are exchanged via API. All sensitive credit data remains inside Credzu's secure environment.
+</Note>
+
+## Authentication Errors
+
+If the API key is invalid or missing, requests will fail with an `AUTH_FAILED` error:
+
+```json
+{
+  "success": false,
+  "error": {
+    "code": "AUTH_FAILED",
+    "message": "Invalid API key"
+  }
+}
+```
+
+Common causes:
+- Missing `Authorization` header
+- Incorrect key format (must use `Credzu-Key` prefix)
+- Expired or revoked API key
+- Using production key on sandbox or vice versa

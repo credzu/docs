@@ -1,0 +1,42 @@
+---
+title: "client_account_created"
+description: "Sent when the borrower logs in and completes onboarding"
+---
+
+## Overview
+
+The `client_account_created` event is sent when the borrower has logged into Credzu and completed the initial onboarding process. This indicates the borrower is actively engaging with the credit repair workflow.
+
+## When It's Triggered
+
+- Borrower has created their Credzu account
+- Borrower has completed initial onboarding steps
+- Borrower is now active in the system
+
+## Payload
+
+```json
+{
+  "event": "client_account_created",
+  "timestamp": "2025-01-15T14:22:00Z",
+  "lead_id": 44921,
+  "partner_lead_id": "FBHL-55672",
+  "details": {}
+}
+```
+
+## Fields
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `event` | string | Always `"client_account_created"` |
+| `timestamp` | string | ISO 8601 timestamp |
+| `lead_id` | integer | Credzu's unique identifier |
+| `partner_lead_id` | string | Your internal ID (if provided) |
+| `details` | object | Empty for this event |
+
+## Recommended Actions
+
+- Update CRM status to "Engaged" or "Onboarded"
+- Notify the loan officer that the borrower is actively participating
+- Begin tracking the borrower's progress timeline

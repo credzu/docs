@@ -1,0 +1,1868 @@
+# API overview and objective.
+
+
+## Credzu API – Background, Introduction &
+
+## Objectives
+
+### Background
+
+Credzu is a web-based application built on WordPress, designed to connect credit-challenged
+consumers with vetted, compliant credit repair providers. We operate as a neutral marketplace
+and escrow-based platform, where lenders and partners can safely refer declined borrowers,
+track their progress in real time, and seamlessly receive them back once credit eligibility is
+restored.
+Traditionally, lenders or real estate partners have referred clients manually by sending a link,
+filling out a form, or passing consumer info through email or internal notes. This creates friction,
+delays, and inconsistent tracking. With large partners—mortgage companies, CRMs, LOS
+systems, and lead management platforms—manual referral workflows cannot scale.
+To address this, Credzu is now moving toward **full API-based referral integrations** , allowing
+partner systems to automatically transmit consumer information directly into Credzu and receive
+status updates without human intervention. This creates a seamless “credit rescue loop”
+between the lender and Credzu.
+
+### Introduction
+
+The Credzu API allows external systems—such as Shape CRM, Flat Branch Home Loans,
+Mutual of Omaha Mortgage, Encompass, TotalExpert, and other LOS/CRM platforms—to
+connect directly to Credzu. Partners can create consumers inside Credzu, track engagement
+events, receive milestone updates, and ensure that clients return to their original loan officer
+once ready to reapply.
+With a simple, secure API, lenders can:
+● Automatically send declined loan applicants to Credzu
+● Trigger onboarding without the borrower filling out another form
+● Track progress (contract signed, credit scan done, score updates, escrow funded, etc.)
+● Receive verified credit score improvements every 45 days
+● Re-engage the consumer once they become mortgage-ready
+● Close deals that would otherwise be permanently lost
+This API transforms the credit repair referral workflow into a fully automated, trackable pipeline.
+
+
+### Objectives
+
+The objectives of the Credzu API are:
+
+#### 1. Improve referral efficiency
+
+Eliminate manual data entry, emails, and copy/paste errors by enabling partners to push leads
+automatically (first name, last name, email, phone, and optional data such as FICO band and
+loan officer ID).
+
+#### 2. Increase lender conversion rates
+
+When declined borrowers enter Credzu through the API, the lender receives structured
+engagement data and verified credit score updates—improving reactivation rates and leading to
+more funded loans.
+
+#### 3. Provide transparent progress tracking
+
+Partners receive standardized status events at every stage:
+● lead received
+● consumer created their account
+● credit scan completed
+● contract signed
+● escrow funded
+● score updates every 45 days
+● mortgage-ready notification
+
+#### 4. Create a closed-loop system
+
+The API ensures borrowers cycle back to the original lender once credit criteria are met. This
+keeps the borrower in the lender’s ecosystem rather than being lost to competitors.
+
+#### 5. Ensure compliance and security
+
+The API uses secure, authenticated endpoints with partner-specific API keys. Only minimal
+necessary data is shared, and Credzu handles sensitive credit data inside the platform.
+
+#### 6. Support enterprise integrations
+
+The API is built to accommodate CRM, LOS, and enterprise banking environments that need:
+● consistent payload structures
+● sandbox environments
+
+
+```
+● logging and audit trails
+● partner-level provisioning and access control
+```
+### Summary
+
+This API allows Credzu and partner systems to operate as one continuous workflow.
+A loan dies → partner system sends borrower → Credzu improves credit → Credzu sends
+borrower back → loan closes.
+The rest of this document will describe **exactly how the integration works** , including:
+
+1. Complete API documentation
+2. All available endpoints
+3. Database schema
+4. WordPress plugin code
+5. Postman testing collection
+6. PHP example code for partners
+
+
+# API documentation
+
+
+## SECTION 1 — CREDZU API
+
+## DOCUMENTATION OVERVIEW
+
+This section explains:
+● API structure
+● Authentication
+● Environments
+● Data format
+● Error handling
+● Rate limits
+● Security expectations
+● Partner responsibilities
+This is the backbone of the technical documentation.
+
+## Credzu API Documentation Overview
+
+### API Base Structure
+
+The Credzu API is a RESTful JSON-based interface that allows third-party systems (CRM, LOS,
+lender software, lead managers, and enterprise partners) to securely exchange referral and
+status information with Credzu.
+All endpoints follow this pattern:
+https://credzu.com/wp-json/credzu/v1/{endpoint}
+Example:
+POST https://credzu.com/wp-json/credzu/v1/create-lead
+
+### Request & Response Format
+
+
+#### Requests
+
+All requests must be:
+Content-Type: application/json
+
+#### Responses
+
+All responses are returned as JSON.
+Standard response template:
+{
+"success": true,
+"message": "Lead received",
+"data": {...}
+}
+Error template:
+{
+"success": false,
+"error": {
+"code": "AUTH_FAILED",
+"message": "Invalid API key"
+}
+}
+
+## Authentication
+
+Credzu uses a **Partner API Key** passed in headers.
+This is simple, fast, secure, and consistent with systems like Shape, TotalExpert, or Velocify.
+
+#### Headers
+
+Authorization: Credzu-Key {PARTNER_API_KEY}
+Content-Type: application/json
+If the key is invalid or missing:
+
+
+```
+● the request fails
+● nothing is created
+● the response contains AUTH_FAILED
+```
+#### API Key Management
+
+Each referral partner receives:
+● Unique API key
+● Optional sandbox key
+● Permissions scoped to inbound/outbound operations
+Keys may be rotated anytime by Credzu staff.
+
+## Environments
+
+#### Sandbox (Testing)
+
+https://sandbox.credzu.com/wp-json/credzu/v1/
+Sandbox uses:
+● test database
+● test logging
+● simulated events (fake score updates, mock contracts)
+
+#### Production
+
+https://credzu.com/wp-json/credzu/v1/
+Production uses:
+● live data
+● full activity logging
+● real credit scans and escrow transactions
+
+## Partner Responsibilities
+
+Partners must:
+
+1. **Include the API key** in every request.
+2. **Send valid JSON** in the correct format.
+3. **Store the Credzu lead ID** returned in the response (used for status callbacks).
+
+
+4. **Handle callbacks** Credzu sends back to the partner’s system.
+5. **Use sandbox** for initial testing.
+6. **Follow security requirements** (below).
+
+## Security Requirements
+
+Partners must protect:
+● API keys
+● Returned lead IDs
+● Any score or milestone data
+Data transferred is limited to non-sensitive identifiers (no full credit reports are ever exchanged
+via API).
+All credit reports remain inside Credzu’s environment.
+Transport layer:
+● HTTPS required
+● TLS 1.2+
+Credzu logs all access attempts and may block suspicious activity.
+
+## Rate Limits
+
+Default limits per partner:
+● **100 requests per minute** inbound
+● **300 status callbacks per minute** outbound
+Ideal volume is far below this, but limits are in place to protect the API.
+If needed, higher volume lenders can request increased quotas.
+
+## Error Handling
+
+Credzu returns standardized error codes:
+
+
+```
+Code Meaning
+AUTH_FAILED Invalid^ or^ missing^ API^ key^
+INVALID_PAYLOAD Missing^ required^ fields^
+VALIDATION_ERROR Field^ format^ incorrect^
+SERVER_ERROR Unexpected^ server^ issue^
+NOT_FOUND Invalid^ lead^ ID^
+RATE_LIMITED Too^ many^ requests^
+```
+#### Example Validation Error
+
+##### {
+
+"success": false,
+"error": {
+"code": "VALIDATION_ERROR",
+"message": "Phone number is missing"
+}
+}
+
+## Logging
+
+Credzu logs every:
+● inbound request
+● payload
+● response
+● authentication attempt
+● partner interaction
+● outbound callback
+● failure or retry
+This allows auditing, debugging, and partner support.
+
+
+## Callback (Webhook) System Overview
+
+Credzu will POST status updates back to the partner’s endpoint:
+Examples:
+POST https://partnercrm.com/api/credzu-status-update
+Events sent include:
+● Lead Received
+● Client Logged In
+● Credit Scan Complete
+● Contract Signed
+● Escrow Funded
+● Score Update (1st, 2nd, 3rd, 4th)
+● Mortgage-Ready
+Each callback includes:
+{
+"event": "contract_signed",
+"lead_id": 44219,
+"partner_lead_id": "abc-123",
+"timestamp": "2025-11-22T17:38:12Z"
+}
+
+## Retry Logic
+
+If a partner endpoint fails (5xx or timeouts):
+● Credzu retries 3 times
+● Exponential backoff (5s, 20s, 60s)
+● After 3 failures, Credzu logs the error and notifies support
+
+
+# Endpoints
+
+
+## SECTION 2 — CREDZU API ENDPOINT
+
+## CATALOG
+
+Below is the complete list of endpoints Credzu will support for lender, CRM, and LOS
+integrations.
+This includes:
+
+1. **Inbound endpoints**
+2. **Outbound webhook events**
+3. **Optional data retrieval endpoints**
+4. **Testing & diagnostic endpoints**
+5. **Payload schemas for every endpoint**
+
+## --------------------------------------------
+
+## 2.1 INBOUND ENDPOINTS (Partner →
+
+## Credzu)
+
+## --------------------------------------------
+
+These are endpoints that partners will call when sending leads or requesting information.
+
+### POST /credzu/v1/create-lead
+
+Creates a new consumer inside Credzu when a borrower is declined due to credit issues.
+
+#### Headers
+
+Content-Type: application/json
+Authorization: Credzu-Key {PARTNER_API_KEY}
+
+
+#### Request Body
+
+##### {
+
+"partner_lead_id": "FBHL-55672",
+"first_name": "John",
+"last_name": "Smith",
+"email": "john.smith@test.com",
+"phone": "555-333-2222",
+"fico_range": "580-619",
+"loan_officer_id": "A.GLADSTONE",
+"notes": "Declined for credit reasons - 48% DTI, low mid-score"
+}
+
+#### Response Body
+
+##### {
+
+"success": true,
+"message": "Lead created",
+"lead_id": 44921,
+"partner_lead_id": "FBHL-55672"
+}
+
+### POST /credzu/v1/update-partner-info (Optional)
+
+Used when the partner wants to push additional metadata about the lead after the initial
+creation.
+
+#### Example payload:
+
+##### {
+
+"lead_id": 44921,
+"loan_product": "FHA",
+"property_state": "MO"
+}
+
+### POST /credzu/v1/get-lead
+
+Allows partners to fetch the current state of a specific lead.
+
+
+#### Example Request
+
+##### {
+
+"lead_id": 44921
+}
+
+#### Example Response
+
+##### {
+
+"success": true,
+"data": {
+"lead_id": 44921,
+"status": "contract_signed",
+"score": {
+"experian": 612,
+"equifax": 605,
+"transunion": 598
+}
+}
+}
+
+### POST /credzu/v1/get-events (Optional)
+
+Returns the history of Credzu events associated with a lead.
+
+#### Example:
+
+##### {
+
+"lead_id": 44921
+}
+
+## --------------------------------------------
+
+## 2.2 OUTBOUND CALLBACKS (Credzu →
+
+## Partner)
+
+
+## --------------------------------------------
+
+Credzu will POST these automatically to the partner’s webhook URL.
+Each payload contains:
+● Credzu lead ID
+● Partner’s original lead ID
+● Event name
+● Timestamp
+● Event-specific data
+The partner must return 200 OK.
+
+## Callback Example (Standard Structure)
+
+##### {
+
+"event": "contract_signed",
+"timestamp": "2025-11-22T20:55:12Z",
+"lead_id": 44921,
+"partner_lead_id": "FBHL-55672",
+"details": {}
+}
+
+## List of Credzu → Partner Events
+
+These match the workflow documented in your Mutual of Omaha integration notes.
+Cited:
+
+#### 1. lead_received
+
+Sent when the partner creates the lead.
+
+#### 2. client_account_created
+
+Borrower logged in / completed onboarding.
+
+
+#### 3. credit_scan_completed
+
+Borrower completed credit scan inside Credzu.
+
+#### 4. client_engaged_in_chat
+
+Message activity in chat interface.
+
+#### 5. contract_signed
+
+Borrower accepted and signed the Credzu service contract.
+
+#### 6. escrow_funded
+
+Borrower funded their pay-per-point escrow account.
+
+#### 7. score_update
+
+Sent at 45-day intervals.
+Payload:
+{
+"event": "score_update",
+"lead_id": 44921,
+"partner_lead_id": "FBHL-55672",
+"details": {
+"experian_gain": 21,
+"equifax_gain": 17,
+"transunion_gain": 19,
+"estimated_time_remaining": "45-90 days"
+}
+}
+
+#### 8. mortgage_ready
+
+Borrower is now lendable / ready to return to the loan officer.
+Payload:
+{
+"event": "mortgage_ready",
+"lead_id": 44921,
+"partner_lead_id": "FBHL-55672",
+
+
+"details": {
+"verified_scores": {
+"experian": 645,
+"equifax": 640,
+"transunion": 643
+}
+}
+}
+This is the event loan officers care about most.
+
+## --------------------------------------------
+
+## 2.3 ADMIN / SYSTEM ENDPOINTS
+
+## --------------------------------------------
+
+### GET /credzu/v1/ping
+
+Used to check if the API is online and responding.
+
+#### Response:
+
+##### {
+
+"success": true,
+"message": "Credzu API online"
+}
+
+## --------------------------------------------
+
+## 2.4 VALIDATION RULES
+
+
+## --------------------------------------------
+
+**Field Required Format**
+first_name Yes String
+last_name Yes String
+email Yes Valid email
+phone Yes String (digits, hyphens,
+spaces, +)
+partner_lead_id Recommended String
+fico_range Optional “500–549”, “550–579”, etc.
+loan_officer_id Optional String
+notes Optional String
+If required fields are missing:
+{
+"success": false,
+"error": {
+"code": "INVALID_PAYLOAD",
+"message": "first_name is required"
+}
+}
+
+## --------------------------------------------
+
+## 2.5 EXAMPLE END-TO-END WORKFLOW
+
+## --------------------------------------------
+
+#### Partner → Credzu
+
+
+POST create-lead
+Credzu returns lead_id = 44921
+
+#### Credzu → Partner
+
+Sends:
+● lead_received
+● client_account_created
+● contract_signed
+● escrow_funded
+● first score update
+● second score update
+● mortgage_ready
+
+#### Partner → Credzu
+
+Optional:
+● GET lead status
+● GET event history
+
+## --------------------------------------------
+
+## 2.6 FULL ENDPOINT LIST SUMMARY
+
+## --------------------------------------------
+
+#### Partner → Credzu
+
+```
+● POST /create-lead
+● POST /get-lead
+● POST /get-events
+● POST /update-partner-info
+● GET /ping
+```
+
+#### Credzu → Partner
+
+(Callbacks)
+● lead_received
+● client_account_created
+● credit_scan_completed
+● client_engaged_in_chat
+● contract_signed
+● escrow_funded
+● score_update
+● mortgage_ready
+
+
+# Schema
+
+
+## SECTION 3 — CREDZU API DATABASE
+
+## SCHEMA
+
+Below are the tables Credzu needs to support:
+
+#### 1. Leads Table
+
+Stores inbound referrals and all essential borrower data.
+
+#### 2. Partner Table
+
+Stores API keys and integration configuration.
+
+#### 3. Event Log Table
+
+Stores Credzu→Partner events (score updates, contract signed, etc.).
+
+#### 4. Outbound Webhook Queue
+
+Stores callback attempts, retry logic, and failure logs.
+
+#### 5. Optional: Lead Metadata Table
+
+For expandable fields without altering schema.
+
+#### 6. Optional: API Request Log Table
+
+Full payload logging for debugging and partner audits.
+All tables use the prefix:
+wp_credzu_
+
+## ---------------------------------------------
+
+## 3.1 TABLE: wp_credzu_partners
+
+
+(Partner identity + API key management)
+
+## ---------------------------------------------
+
+Holds each referral partner (Flat Branch, Shape CRM, Mutual of Omaha, etc.)
+
+#### Schema
+
+```
+Field Type Notes
+id BIGINT AUTO_INCREMENT
+PK
+Partner internal ID
+partner_name VARCHAR(255) Human-readable name
+api_key VARCHAR(128) UNIQUE API key used in requests
+webhook_url VARCHAR(500) URL where we send
+callbacks
+status ENUM('active','disabled') Disable access if needed
+created_at DATETIME
+updated_at DATETIME
+```
+#### Indexes
+
+```
+● api_key (unique)
+● partner_name
+```
+## ---------------------------------------------
+
+## 3.2 TABLE: wp_credzu_leads
+
+(Central lead record — the heart of the integration)
+
+
+## ---------------------------------------------
+
+This connects the Partner → Credzu → Provider workflow.
+
+#### Schema
+
+```
+Field Type Notes
+id BIGINT AUTO_INCREMENT
+PK
+Credzu Lead ID
+partner_id BIGINT FK to wp_credzu_partners.id
+partner_lead_id VARCHAR(255) Their ID for the borrower
+first_name VARCHAR(150)
+last_name VARCHAR(150)
+email VARCHAR(255)
+phone VARCHAR(50)
+fico_range VARCHAR(20) e.g. "580-619"
+loan_officer_id VARCHAR(255) Optional
+status VARCHAR(50) Current milestone
+created_at DATETIME
+updated_at DATETIME
+```
+#### Recommended Indexes
+
+```
+● (partner_id, partner_lead_id)
+● (email, phone)
+● (status)
+```
+## ---------------------------------------------
+
+
+## 3.3 TABLE: wp_credzu_lead_meta
+
+(Expandable metadata without schema changes)
+
+## ---------------------------------------------
+
+Same pattern as wp_postmeta.
+
+#### Schema
+
+```
+Field Type
+id BIGINT AUTO_INCREMENT PK
+lead_id BIGINT
+meta_key VARCHAR(190)
+meta_value LONGTEXT
+created_at DATETIME
+```
+#### Used For
+
+```
+● Loan product
+● Property state
+● Channel
+● Additional onboarding answers
+● Salesforce/HubSpot IDs
+● Any custom needs from partners
+```
+#### Indexes
+
+```
+● (lead_id, meta_key)
+● (meta_key)
+```
+## ---------------------------------------------
+
+
+## 3.4 TABLE: wp_credzu_events
+
+(Log of all Credzu workflow events)
+
+## ---------------------------------------------
+
+Every meaningful action gets stored here.
+
+#### Schema
+
+```
+Field Type Notes
+id BIGINT AUTO_INCREMENT
+PK
+lead_id BIGINT FK to leads
+partner_id BIGINT
+```
+event_name VARCHAR(255) (^) e.g. contract_signed
+event_payload LONGTEXT JSON details
+created_at DATETIME Timestamp of event
+
+#### Indexes
+
+```
+● (lead_id)
+● (event_name)
+● (created_at)
+```
+## ---------------------------------------------
+
+## 3.5 TABLE: wp_credzu_webhook_queue
+
+(Outbound callback queue — ensures reliability)
+
+
+## ---------------------------------------------
+
+This table handles retry logic, failures, and partner notifications.
+
+#### Schema
+
+```
+Field Type Notes
+id BIGINT AUTO_INCREMENT
+PK
+partner_id BIGINT
+lead_id BIGINT
+event_name VARCHAR(255)
+attempt_count INT DEFAULT 0
+max_attempts INT DEFAULT 3
+status ENUM('pending','sent','failed')
+payload LONGTEXT Full JSON sent to partner
+last_attempt_at DATETIME
+next_attempt_at DATETIME
+created_at DATETIME
+```
+#### Retry Logic
+
+```
+● Attempt #1 immediately
+● Attempt #2 after 20s
+● Attempt #3 after 60s
+● If still failing → status: failed, alert team
+```
+#### Indexes
+
+```
+● (status, next_attempt_at)
+● (partner_id, lead_id)
+```
+
+## ---------------------------------------------
+
+## 3.6 TABLE: wp_credzu_api_logs (Optional
+
+## but recommended)
+
+## ---------------------------------------------
+
+Store all inbound API requests for:
+● Debugging
+● Compliance
+● Forensics
+● Partner support disputes
+
+#### Schema
+
+```
+Field Type
+id BIGINT AUTO_INCREMENT PK
+partner_id BIGINT
+endpoint VARCHAR(255)
+request_payload LONGTEXT
+response_payload LONGTEXT
+status_code INT
+created_at DATETIME
+```
+#### Indexes
+
+```
+● (partner_id)
+● (endpoint)
+● (created_at)
+```
+
+## ---------------------------------------------
+
+## 3.7 DATABASE RELATIONSHIP MAP
+
+## ---------------------------------------------
+
+wp_credzu_partners
+│
+├──< wp_credzu_leads
+│ │
+│ ├──< wp_credzu_events
+│ │
+│ ├──< wp_credzu_lead_meta
+│ │
+│ └──< wp_credzu_webhook_queue
+│
+└──< wp_credzu_api_logs
+Each partner has:
+● Many leads
+● Many events
+● Many webhook callbacks
+● Many logs
+
+## ---------------------------------------------
+
+## 3.8 HOW THE TABLES WORK TOGETHER
+
+## ---------------------------------------------
+
+Here’s the real-world workflow:
+
+
+#### Partner → Credzu
+
+1. Partner sends lead to /create-lead
+2. Credzu creates record in wp_credzu_leads
+3. Metadata stored in wp_credzu_lead_meta
+4. Initial event logged in wp_credzu_events
+5. Callback queued in wp_credzu_webhook_queue
+
+#### Credzu → Partner
+
+6. Cron processes queue
+7. Attempts webhooks
+8. Logs request/response in wp_credzu_api_logs
+
+#### Credzu internal workflow
+
+9. Every milestone (contract signed, score update, etc.)
+10. New event created
+11. Callback queued
+12. Status updated in leads
+
+## ---------------------------------------------
+
+## 3.9 PERFORMANCE OPTIMIZATION
+
+## ---------------------------------------------
+
+#### Key performance strategies
+
+```
+● Index leads by (partner_id, partner_lead_id)
+● Keep event logs separate to avoid bloating leads table
+● Lightweight leads table = high query performance
+● Queue table decouples sending callbacks from API response speed
+```
+#### Why this matters
+
+
+As you scale to:
+● UWM (5,000 declines/day)
+● Guild Mortgage
+● Mutual of Omaha Mortgage
+● Fairway
+● Brokers nationwide
+...your API must stay fast and reliable.
+This schema is built for that scale.
+
+
+# Plugin (code)
+
+
+Nice. Let’s turn all that planning into an actual plugin you can drop into
+/wp-content/plugins/credzu-api/.
+Below is a **single-file WordPress plugin** that:
+● Creates the DB tables we designed
+● Registers the REST API endpoints
+● Authenticates via Authorization: Credzu-Key {API_KEY}
+● Creates leads and events
+● Queues outbound webhooks
+● Runs a CRON job to send callbacks and handle retries
+You can split this into multiple files later if you want, but this is fully functional as a starting point.
+
+### wp-content/plugins/credzu-api/credzu-api.php
+
+<?php
+/**
+* Plugin Name: Credzu API
+* Description: REST API integration for lender/CRM referrals and status callbacks.
+* Version: 1.0.0
+* Author: Credzu
+*/
+if (! defined( 'ABSPATH' ) ) exit;
+class Credzu_API_Plugin {
+const VERSION = '1.0.0';
+const CRON_HOOK = 'credzu_process_webhook_queue';
+public function __construct() {
+register_activation_hook( __FILE__, [ $this, 'activate' ] );
+register_deactivation_hook( __FILE__, [ $this, 'deactivate' ] );
+add_action( 'rest_api_init', [ $this, 'register_routes' ] );
+add_action( self::CRON_HOOK, [ $this, 'process_webhook_queue' ] );
+}
+/**
+* Plugin activation: create tables & schedule cron.
+
+
+##### */
+
+public function activate() {
+$this->create_tables();
+if (! wp_next_scheduled( self::CRON_HOOK ) ) {
+wp_schedule_event( time() + 60, 'minute', self::CRON_HOOK );
+}
+}
+/**
+* Plugin deactivation: unschedule cron.
+*/
+public function deactivate() {
+$timestamp = wp_next_scheduled( self::CRON_HOOK );
+if ( $timestamp ) {
+wp_unschedule_event( $timestamp, self::CRON_HOOK );
+}
+}
+/**
+* Create custom DB tables.
+*/
+private function create_tables() {
+global $wpdb;
+require_once ABSPATH. 'wp-admin/includes/upgrade.php';
+$charset_collate = $wpdb->get_charset_collate();
+$partners_table = $wpdb->prefix. 'credzu_partners';
+$leads_table = $wpdb->prefix. 'credzu_leads';
+$lead_meta = $wpdb->prefix. 'credzu_lead_meta';
+$events_table = $wpdb->prefix. 'credzu_events';
+$queue_table = $wpdb->prefix. 'credzu_webhook_queue';
+$log_table = $wpdb->prefix. 'credzu_api_logs';
+$sql = [];
+$sql[] = "CREATE TABLE $partners_table (
+id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+partner_name VARCHAR(255) NOT NULL,
+api_key VARCHAR(128) NOT NULL UNIQUE,
+webhook_url VARCHAR(500) DEFAULT NULL,
+status ENUM('active','disabled') DEFAULT 'active',
+created_at DATETIME NOT NULL,
+
+
+updated_at DATETIME NOT NULL,
+PRIMARY KEY (id),
+KEY partner_name (partner_name),
+KEY api_key (api_key)
+) $charset_collate;";
+$sql[] = "CREATE TABLE $leads_table (
+id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+partner_id BIGINT UNSIGNED NOT NULL,
+partner_lead_id VARCHAR(255) DEFAULT NULL,
+first_name VARCHAR(150) NOT NULL,
+last_name VARCHAR(150) NOT NULL,
+email VARCHAR(255) NOT NULL,
+phone VARCHAR(50) NOT NULL,
+fico_range VARCHAR(20) DEFAULT NULL,
+loan_officer_id VARCHAR(255) DEFAULT NULL,
+status VARCHAR(50) DEFAULT 'lead_received',
+created_at DATETIME NOT NULL,
+updated_at DATETIME NOT NULL,
+PRIMARY KEY (id),
+KEY partner_lead (partner_id, partner_lead_id),
+KEY status (status),
+KEY email_phone (email, phone)
+) $charset_collate;";
+$sql[] = "CREATE TABLE $lead_meta (
+id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+lead_id BIGINT UNSIGNED NOT NULL,
+meta_key VARCHAR(190) NOT NULL,
+meta_value LONGTEXT,
+created_at DATETIME NOT NULL,
+PRIMARY KEY (id),
+KEY lead_meta_key (lead_id, meta_key),
+KEY meta_key (meta_key)
+) $charset_collate;";
+$sql[] = "CREATE TABLE $events_table (
+id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+lead_id BIGINT UNSIGNED NOT NULL,
+partner_id BIGINT UNSIGNED NOT NULL,
+event_name VARCHAR(255) NOT NULL,
+event_payload LONGTEXT,
+created_at DATETIME NOT NULL,
+PRIMARY KEY (id),
+
+
+KEY lead_id (lead_id),
+KEY event_name (event_name),
+KEY created_at (created_at)
+) $charset_collate;";
+$sql[] = "CREATE TABLE $queue_table (
+id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+partner_id BIGINT UNSIGNED NOT NULL,
+lead_id BIGINT UNSIGNED NOT NULL,
+event_name VARCHAR(255) NOT NULL,
+attempt_count INT NOT NULL DEFAULT 0,
+max_attempts INT NOT NULL DEFAULT 3,
+status ENUM('pending','sent','failed') NOT NULL DEFAULT 'pending',
+payload LONGTEXT NOT NULL,
+last_attempt_at DATETIME DEFAULT NULL,
+next_attempt_at DATETIME DEFAULT NULL,
+created_at DATETIME NOT NULL,
+PRIMARY KEY (id),
+KEY status_next (status, next_attempt_at),
+KEY partner_lead (partner_id, lead_id)
+) $charset_collate;";
+$sql[] = "CREATE TABLE $log_table (
+id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+partner_id BIGINT UNSIGNED DEFAULT NULL,
+endpoint VARCHAR(255) NOT NULL,
+request_payload LONGTEXT,
+response_payload LONGTEXT,
+status_code INT DEFAULT NULL,
+created_at DATETIME NOT NULL,
+PRIMARY KEY (id),
+KEY partner_id (partner_id),
+KEY endpoint (endpoint),
+KEY created_at (created_at)
+) $charset_collate;";
+foreach ( $sql as $statement ) {
+dbDelta( $statement );
+}
+// (Optional) Seed a test partner if none exists.
+$count = $wpdb->get_var( "SELECT COUNT(*) FROM $partners_table" );
+if (! $count ) {
+$test_key = wp_generate_password( 64, false, false );
+
+
+$wpdb->insert( $partners_table, [
+'partner_name' => 'Test Partner',
+'api_key' => $test_key,
+'webhook_url' => '',
+'status' => 'active',
+'created_at' => current_time( 'mysql' ),
+'updated_at' => current_time( 'mysql' ),
+] );
+}
+}
+/**
+* Register REST API routes.
+*/
+public function register_routes() {
+register_rest_route( 'credzu/v1', '/ping', [
+'methods' => 'GET',
+'callback' => [ $this, 'endpoint_ping' ],
+'permission_callback' => '__return_true',
+] );
+register_rest_route( 'credzu/v1', '/create-lead', [
+'methods' => 'POST',
+'callback' => [ $this, 'endpoint_create_lead' ],
+'permission_callback' => [ $this, 'auth_request' ],
+] );
+register_rest_route( 'credzu/v1', '/get-lead', [
+'methods' => 'POST',
+'callback' => [ $this, 'endpoint_get_lead' ],
+'permission_callback' => [ $this, 'auth_request' ],
+] );
+register_rest_route( 'credzu/v1', '/get-events', [
+'methods' => 'POST',
+'callback' => [ $this, 'endpoint_get_events' ],
+'permission_callback' => [ $this, 'auth_request' ],
+] );
+}
+/**
+* Simple health check.
+*/
+public function endpoint_ping( WP_REST_Request $request ) {
+
+
+return [
+'success' => true,
+'message' => 'Credzu API online',
+'version' => self::VERSION,
+];
+}
+/**
+* Authenticate partner by API key header.
+*/
+public function auth_request( WP_REST_Request $request ) {
+global $wpdb;
+$auth_header = $request->get_header( 'authorization' );
+if (! $auth_header ) {
+$auth_header = $request->get_header( 'Authorization' );
+}
+if (! $auth_header ) {
+return new WP_Error( 'AUTH_FAILED', 'Missing Authorization header', [ 'status' => 401 ]
+);
+}
+// Expected format: "Credzu-Key xxxxxx"
+if ( stripos( $auth_header, 'Credzu-Key ' ) === 0 ) {
+$api_key = trim( substr( $auth_header, strlen( 'Credzu-Key ' ) ) );
+} else {
+// Also support bare key (not recommended, but flexible)
+$api_key = trim( $auth_header );
+}
+if ( empty( $api_key ) ) {
+return new WP_Error( 'AUTH_FAILED', 'Empty API key', [ 'status' => 401 ] );
+}
+$partners_table = $wpdb->prefix. 'credzu_partners';
+$partner = $wpdb->get_row(
+$wpdb->prepare( "SELECT * FROM $partners_table WHERE api_key = %s AND status
+= 'active' LIMIT 1", $api_key )
+);
+if (! $partner ) {
+return new WP_Error( 'AUTH_FAILED', 'Invalid API key', [ 'status' => 401 ] );
+}
+
+
+// Attach partner to request for later use.
+$request->set_param( '_credzu_partner', $partner );
+return true;
+}
+/**
+* Create lead endpoint.
+* Expected JSON fields:
+* - first_name, last_name, email, phone (required)
+* - partner_lead_id, fico_range, loan_officer_id, notes (optional)
+*/
+public function endpoint_create_lead( WP_REST_Request $request ) {
+global $wpdb;
+$partner = $request->get_param( '_credzu_partner' );
+$data = $request->get_json_params();
+$required = [ 'first_name', 'last_name', 'email', 'phone' ];
+foreach ( $required as $field ) {
+if ( empty( $data[ $field ] ) ) {
+return $this->error_response( 'INVALID_PAYLOAD', sprintf( '%s is required', $field ),
+400, $partner, '/credzu/v1/create-lead', $data );
+}
+}
+$first = sanitize_text_field( $data['first_name'] );
+$last = sanitize_text_field( $data['last_name'] );
+$email = sanitize_email( $data['email'] );
+$phone = sanitize_text_field( $data['phone'] );
+if (! is_email( $email ) ) {
+return $this->error_response( 'VALIDATION_ERROR', 'Invalid email format', 400,
+$partner, '/credzu/v1/create-lead', $data );
+}
+$partner_lead_id = isset( $data['partner_lead_id'] )? sanitize_text_field(
+$data['partner_lead_id'] ) : null;
+$fico_range = isset( $data['fico_range'] )? sanitize_text_field( $data['fico_range'] ) : null;
+$loan_officer_id = isset( $data['loan_officer_id'] )? sanitize_text_field(
+$data['loan_officer_id'] ) : null;
+$notes = isset( $data['notes'] )? sanitize_textarea_field( $data['notes'] ) : null;
+$leads_table = $wpdb->prefix. 'credzu_leads';
+
+
+$meta_table = $wpdb->prefix. 'credzu_lead_meta';
+$now = current_time( 'mysql' );
+$inserted = $wpdb->insert(
+$leads_table,
+[
+'partner_id' => $partner->id,
+'partner_lead_id' => $partner_lead_id,
+'first_name' => $first,
+'last_name' => $last,
+'email' => $email,
+'phone' => $phone,
+'fico_range' => $fico_range,
+'loan_officer_id' => $loan_officer_id,
+'status' => 'lead_received',
+'created_at' => $now,
+'updated_at' => $now,
+],
+[ '%d', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s' ]
+);
+if (! $inserted ) {
+return $this->error_response( 'SERVER_ERROR', 'Could not create lead', 500, $partner,
+'/credzu/v1/create-lead', $data );
+}
+$lead_id = $wpdb->insert_id;
+// Optional meta: notes, any extra keys the partner sent.
+if ( $notes ) {
+$wpdb->insert(
+$meta_table,
+[
+'lead_id' => $lead_id,
+'meta_key' => 'notes',
+'meta_value' => $notes,
+'created_at' => $now,
+]
+);
+}
+// Save any other unknown fields as meta.
+$reserved = [ 'first_name', 'last_name', 'email', 'phone', 'partner_lead_id', 'fico_range',
+'loan_officer_id', 'notes' ];
+
+
+foreach ( $data as $key => $value ) {
+if ( in_array( $key, $reserved, true ) ) continue;
+$wpdb->insert(
+$meta_table,
+[
+'lead_id' => $lead_id,
+'meta_key' => sanitize_key( $key ),
+'meta_value' => maybe_serialize( $value ),
+'created_at' => $now,
+]
+);
+}
+// Log event and queue webhook: lead_received
+$this->record_event( $partner->id, $lead_id, 'lead_received', [
+'partner_lead_id' => $partner_lead_id,
+] );
+$this->queue_webhook( $partner->id, $lead_id, 'lead_received', [
+'event' => 'lead_received',
+'timestamp' => gmdate( 'c' ),
+'lead_id' => $lead_id,
+'partner_lead_id' => $partner_lead_id,
+] );
+$response = [
+'success' => true,
+'message' => 'Lead created',
+'lead_id' => $lead_id,
+'partner_lead_id' => $partner_lead_id,
+];
+$this->log_api_call( $partner->id, '/credzu/v1/create-lead', $data, $response, 200 );
+return $response;
+}
+/**
+* Get lead by Credzu lead_id.
+*/
+public function endpoint_get_lead( WP_REST_Request $request ) {
+global $wpdb;
+$partner = $request->get_param( '_credzu_partner' );
+$data = $request->get_json_params();
+
+
+$lead_id = isset( $data['lead_id'] )? intval( $data['lead_id'] ) : 0;
+if (! $lead_id ) {
+return $this->error_response( 'INVALID_PAYLOAD', 'lead_id is required', 400, $partner,
+'/credzu/v1/get-lead', $data );
+}
+$leads_table = $wpdb->prefix. 'credzu_leads';
+$lead = $wpdb->get_row(
+$wpdb->prepare(
+"SELECT * FROM $leads_table WHERE id = %d AND partner_id = %d LIMIT 1",
+$lead_id,
+$partner->id
+),
+ARRAY_A
+);
+if (! $lead ) {
+return $this->error_response( 'NOT_FOUND', 'Lead not found', 404, $partner,
+'/credzu/v1/get-lead', $data );
+}
+$response = [
+'success' => true,
+'data' => $lead,
+];
+$this->log_api_call( $partner->id, '/credzu/v1/get-lead', $data, $response, 200 );
+return $response;
+}
+/**
+* Get events for a lead.
+*/
+public function endpoint_get_events( WP_REST_Request $request ) {
+global $wpdb;
+$partner = $request->get_param( '_credzu_partner' );
+$data = $request->get_json_params();
+$lead_id = isset( $data['lead_id'] )? intval( $data['lead_id'] ) : 0;
+if (! $lead_id ) {
+return $this->error_response( 'INVALID_PAYLOAD', 'lead_id is required', 400, $partner,
+'/credzu/v1/get-events', $data );
+}
+
+
+$events_table = $wpdb->prefix. 'credzu_events';
+$events = $wpdb->get_results(
+$wpdb->prepare(
+"SELECT event_name, event_payload, created_at
+FROM $events_table
+WHERE lead_id = %d AND partner_id = %d
+ORDER BY created_at ASC",
+$lead_id,
+$partner->id
+),
+ARRAY_A
+);
+foreach ( $events as &$event ) {
+$event['event_payload'] = $event['event_payload']? json_decode(
+$event['event_payload'], true ) : null;
+}
+$response = [
+'success' => true,
+'data' => $events,
+];
+$this->log_api_call( $partner->id, '/credzu/v1/get-events', $data, $response, 200 );
+return $response;
+}
+/**
+* Record an internal event.
+*/
+private function record_event( $partner_id, $lead_id, $event_name, $payload = [] ) {
+global $wpdb;
+$events_table = $wpdb->prefix. 'credzu_events';
+$wpdb->insert(
+$events_table,
+[
+'lead_id' => $lead_id,
+'partner_id' => $partner_id,
+'event_name' => sanitize_text_field( $event_name ),
+'event_payload' =>! empty( $payload )? wp_json_encode( $payload ) : null,
+'created_at' => current_time( 'mysql' ),
+]
+
+
+##### );
+
+##### }
+
+##### /**
+
+* Queue a webhook callback.
+*/
+private function queue_webhook( $partner_id, $lead_id, $event_name, $payload ) {
+global $wpdb;
+$queue_table = $wpdb->prefix. 'credzu_webhook_queue';
+$now = current_time( 'mysql' );
+$wpdb->insert(
+$queue_table,
+[
+'partner_id' => $partner_id,
+'lead_id' => $lead_id,
+'event_name' => sanitize_text_field( $event_name ),
+'attempt_count' => 0,
+'max_attempts' => 3,
+'status' => 'pending',
+'payload' => wp_json_encode( $payload ),
+'last_attempt_at' => null,
+'next_attempt_at' => $now,
+'created_at' => $now,
+]
+);
+}
+/**
+* Process webhook queue (CRON).
+*/
+public function process_webhook_queue() {
+global $wpdb;
+$queue_table = $wpdb->prefix. 'credzu_webhook_queue';
+$partners_table = $wpdb->prefix. 'credzu_partners';
+$now = current_time( 'mysql' );
+$items = $wpdb->get_results(
+$wpdb->prepare(
+"SELECT q.*, p.webhook_url
+FROM $queue_table q
+
+
+JOIN $partners_table p ON p.id = q.partner_id
+WHERE q.status = 'pending'
+AND q.next_attempt_at <= %s
+AND p.status = 'active'
+LIMIT 50",
+$now
+)
+);
+if ( empty( $items ) ) {
+return;
+}
+foreach ( $items as $item ) {
+if ( empty( $item->webhook_url ) ) {
+$this->mark_queue_failed( $item->id );
+continue;
+}
+$payload = json_decode( $item->payload, true );
+if (! $payload ) {
+$this->mark_queue_failed( $item->id );
+continue;
+}
+$response = wp_remote_post( $item->webhook_url, [
+'timeout' => 10,
+'headers' => [
+'Content-Type' => 'application/json',
+],
+'body' => wp_json_encode( $payload ),
+] );
+$this->handle_webhook_response( $item, $response );
+}
+}
+private function handle_webhook_response( $queue_item, $response ) {
+global $wpdb;
+$queue_table = $wpdb->prefix. 'credzu_webhook_queue';
+$attempt_count = (int) $queue_item->attempt_count + 1;
+$now = current_time( 'mysql' );
+
+
+if ( is_wp_error( $response ) ) {
+// Failure
+if ( $attempt_count >= (int) $queue_item->max_attempts ) {
+$wpdb->update(
+$queue_table,
+[
+'status' => 'failed',
+'attempt_count' => $attempt_count,
+'last_attempt_at' => $now,
+],
+[ 'id' => $queue_item->id ]
+);
+} else {
+$next = $this->calculate_next_attempt_time( $attempt_count );
+$wpdb->update(
+$queue_table,
+[
+'attempt_count' => $attempt_count,
+'last_attempt_at' => $now,
+'next_attempt_at' => $next,
+],
+[ 'id' => $queue_item->id ]
+);
+}
+return;
+}
+$status_code = wp_remote_retrieve_response_code( $response );
+if ( $status_code >= 200 && $status_code < 300 ) {
+// Success
+$wpdb->update(
+$queue_table,
+[
+'status' => 'sent',
+'attempt_count' => $attempt_count,
+'last_attempt_at' => $now,
+],
+[ 'id' => $queue_item->id ]
+);
+} else {
+// Retry or fail
+if ( $attempt_count >= (int) $queue_item->max_attempts ) {
+
+
+$wpdb->update(
+$queue_table,
+[
+'status' => 'failed',
+'attempt_count' => $attempt_count,
+'last_attempt_at' => $now,
+],
+[ 'id' => $queue_item->id ]
+);
+} else {
+$next = $this->calculate_next_attempt_time( $attempt_count );
+$wpdb->update(
+$queue_table,
+[
+'attempt_count' => $attempt_count,
+'last_attempt_at' => $now,
+'next_attempt_at' => $next,
+],
+[ 'id' => $queue_item->id ]
+);
+}
+}
+}
+private function calculate_next_attempt_time( $attempt_count ) {
+// Simple exponential-ish backoff: 5s, 20s, 60s.
+$delay = 5;
+if ( $attempt_count == 2 ) {
+$delay = 20;
+} elseif ( $attempt_count >= 3 ) {
+$delay = 60;
+}
+return gmdate( 'Y-m-d H:i:s', time() + $delay );
+}
+private function mark_queue_failed( $queue_id ) {
+global $wpdb;
+$queue_table = $wpdb->prefix. 'credzu_webhook_queue';
+$wpdb->update(
+$queue_table,
+[
+'status' => 'failed',
+'last_attempt_at' => current_time( 'mysql' ),
+],
+
+
+[ 'id' => $queue_id ]
+);
+}
+/**
+* Log API calls.
+*/
+private function log_api_call( $partner_id, $endpoint, $request, $response, $status_code ) {
+global $wpdb;
+$log_table = $wpdb->prefix. 'credzu_api_logs';
+$wpdb->insert(
+$log_table,
+[
+'partner_id' => $partner_id,
+'endpoint' => $endpoint,
+'request_payload' => wp_json_encode( $request ),
+'response_payload' => wp_json_encode( $response ),
+'status_code' => (int) $status_code,
+'created_at' => current_time( 'mysql' ),
+]
+);
+}
+/**
+* Standardized error response + logging.
+*/
+private function error_response( $code, $message, $http_status = 400, $partner = null,
+$endpoint = '', $request = [] ) {
+$response = [
+'success' => false,
+'error' => [
+'code' => $code,
+'message' => $message,
+],
+];
+if ( $partner && isset( $partner->id ) ) {
+$this->log_api_call( $partner->id, $endpoint, $request, $response, $http_status );
+}
+return new WP_REST_Response( $response, $http_status );
+}
+}
+
+
+// Add custom interval for "minute" cron if needed.
+add_filter( 'cron_schedules', function( $schedules ) {
+if (! isset( $schedules['minute'] ) ) {
+$schedules['minute'] = [
+'interval' => 60,
+'display' => __( 'Every Minute' ),
+];
+}
+return $schedules;
+} );
+new Credzu_API_Plugin();
+
+#### How to use this now
+
+1. Create folder: wp-content/plugins/credzu-api/
+2. Save this file as: credzu-api.php inside that folder.
+3. Activate **Credzu API** in the WordPress admin.
+4. Check DB to see the wp_credzu_* tables created.
+5. Grab the seeded test partner’s API key from wp_credzu_partners.
+6. Test with something like:
+curl -X POST "https://yourdomain.com/wp-json/credzu/v1/create-lead" \
+-H "Content-Type: application/json" \
+-H "Authorization: Credzu-Key YOUR_KEY_HERE" \
+-d '{
+"partner_lead_id": "FBHL-123",
+"first_name": "John",
+"last_name": "Doe",
+"email": "john@example.com",
+"phone": "555-111-2222"
+}'
+
+
+# Postman Collection (import-ready)
+
+
+Excellent — now we’ll create **SECTION 5 (Postman Collection)** and **SECTION 6
+(Partner-Side PHP Example Code)** so lenders, CRMs, and LOS systems can immediately
+integrate with Credzu’s API.
+I will first generate the **Postman Collection** (import-ready JSON), then I will follow with a **clean
+PHP integration example**.
+
+## ✅ SECTION 5 — POSTMAN COLLECTION
+
+## (Import-Ready)
+
+This is a full Postman collection you can copy/paste into a .json file or directly import into
+Postman.
+It includes:
+● GET /ping
+● POST /create-lead
+● POST /get-lead
+● POST /get-events
+Everything is pre-configured to use a Postman variable:
+{{credzu_api_key}}
+
+### 📌 POSTMAN COLLECTION JSON
+
+Copy and save as:
+**Credzu-API.postman_collection.json**
+{
+"info": {
+"name": "Credzu API",
+"_postman_id": "c2c137ab-324e-4780-b94f-f8c0d5118e69",
+"description": "Postman collection for testing Credzu API endpoints.",
+"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+},
+"item": [
+{
+
+
+"name": "Ping (Health Check)",
+"request": {
+"method": "GET",
+"header": [],
+"url": {
+"raw": "{{credzu_base}}/wp-json/credzu/v1/ping",
+"host": ["{{credzu_base}}"],
+"path": ["wp-json","credzu","v1","ping"]
+}
+}
+},
+{
+"name": "Create Lead",
+"request": {
+"method": "POST",
+"header": [
+{ "key": "Content-Type", "value": "application/json" },
+{ "key": "Authorization", "value": "Credzu-Key {{credzu_api_key}}" }
+],
+"body": {
+"mode": "raw",
+"raw": "{\n \"partner_lead_id\": \"FBHL-12345\",\n \"first_name\": \"John\",\n
+\"last_name\": \"Doe\",\n \"email\": \"john.doe@test.com\",\n \"phone\": \"555-222-1111\",\n
+\"fico_range\": \"580-619\",\n \"loan_officer_id\": \"A.GLADSTONE\",\n \"notes\": \"Declined for
+credit — low mid-score\"\n}"
+},
+"url": {
+"raw": "{{credzu_base}}/wp-json/credzu/v1/create-lead",
+"host": ["{{credzu_base}}"],
+"path": ["wp-json","credzu","v1","create-lead"]
+}
+}
+},
+{
+"name": "Get Lead",
+"request": {
+"method": "POST",
+"header": [
+{ "key": "Content-Type", "value": "application/json" },
+{ "key": "Authorization", "value": "Credzu-Key {{credzu_api_key}}" }
+],
+"body": {
+"mode": "raw",
+"raw": "{\n \"lead_id\": 12345\n}"
+
+
+##### },
+
+"url": {
+"raw": "{{credzu_base}}/wp-json/credzu/v1/get-lead",
+"host": ["{{credzu_base}}"],
+"path": ["wp-json","credzu","v1","get-lead"]
+}
+}
+},
+{
+"name": "Get Events",
+"request": {
+"method": "POST",
+"header": [
+{ "key": "Content-Type", "value": "application/json" },
+{ "key": "Authorization", "value": "Credzu-Key {{credzu_api_key}}" }
+],
+"body": {
+"mode": "raw",
+"raw": "{\n \"lead_id\": 12345\n}"
+},
+"url": {
+"raw": "{{credzu_base}}/wp-json/credzu/v1/get-events",
+"host": ["{{credzu_base}}"],
+"path": ["wp-json","credzu","v1","get-events"]
+}
+}
+}
+],
+"variable": [
+{
+"key": "credzu_base",
+"value": "https://credzu.com"
+},
+{
+"key": "credzu_api_key",
+"value": "REPLACE_WITH_YOUR_KEY"
+}
+]
+}
+
+## 🎉 Your Postman Collection is Complete
+
+
+A lender or CRM can import this file in seconds and immediately test the API.
+
+## ✅ SECTION 6 — PARTNER-SIDE PHP
+
+## EXAMPLE CODE
+
+This is what you send to CRMs (Shape, TotalExpert, Jungo), LOS platforms (Encompass,
+LendingPad), or direct lenders who want to implement the integration.
+This is a **simple, production-ready PHP example** of sending a lead to Credzu and handling
+callback webhooks.
+
+## 6.1 — PHP Code: Sending a Lead to
+
+## Credzu
+
+<?php
+function send_to_credzu($lead) {
+$endpoint = "https://credzu.com/wp-json/credzu/v1/create-lead";
+$apiKey = "YOUR_CREDZU_PARTNER_API_KEY";
+$payload = [
+"partner_lead_id" => $lead['id'],
+"first_name" => $lead['first_name'],
+"last_name" => $lead['last_name'],
+"email" => $lead['email'],
+"phone" => $lead['phone'],
+"fico_range" => $lead['fico_range'] ?? null,
+"loan_officer_id" => $lead['loan_officer_id'] ?? null,
+"notes" => $lead['notes'] ?? null
+];
+$ch = curl_init($endpoint);
+curl_setopt_array($ch, [
+CURLOPT_POST => true,
+CURLOPT_RETURNTRANSFER => true,
+
+
+##### CURLOPT_HTTPHEADER => [
+
+"Content-Type: application/json",
+"Authorization: Credzu-Key {$apiKey}"
+],
+CURLOPT_POSTFIELDS => json_encode($payload)
+]);
+$response = curl_exec($ch);
+$status = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+curl_close($ch);
+return [
+"http_status" => $status,
+"response" => json_decode($response, true)
+];
+}
+// Example
+$lead = [
+"id" => "FBHL-78901",
+"first_name" => "Sarah",
+"last_name" => "Coleman",
+"email" => "sarah.coleman@test.com",
+"phone" => "555-778-9999",
+"fico_range" => "540-579",
+"loan_officer_id" => "A.GLADSTONE",
+"notes" => "Declined due to credit score and collections"
+];
+$result = send_to_credzu($lead);
+print_r($result);
+
+## 6.2 — PHP Code: Handling Credzu
+
+## Callbacks (Webhooks)
+
+Your partners need a URL on their end to catch events Credzu sends.
+They can use something like /credzu/webhook.php.
+<?php
+
+
+// credzu_webhook.php
+// Read raw POST body
+$raw = file_get_contents("php://input");
+$data = json_decode($raw, true);
+// Log webhook for debugging
+file_put_contents("credzu-webhook.log", date('c'). " ". $raw. "\n", FILE_APPEND);
+// Validate payload
+if (!isset($data['event']) || !isset($data['lead_id'])) {
+http_response_code(400);
+echo json_encode(["success" => false, "message" => "Invalid payload"]);
+exit;
+}
+// Process event
+switch ($data['event']) {
+case "lead_received":
+// Mark lead as received
+break;
+case "client_account_created":
+// Update CRM UI
+break;
+case "credit_scan_completed":
+// Notify LO assistant
+break;
+case "contract_signed":
+// Lead is officially engaged
+break;
+case "escrow_funded":
+// Serious engagement
+break;
+case "score_update":
+// Save score increments to CRM dashboard
+break;
+case "mortgage_ready":
+
+
+// Send alert to loan officer — highest priority
+break;
+}
+// Always return 200 OK
+http_response_code(200);
+echo json_encode(["success" => true]);
+
+

@@ -1,0 +1,163 @@
+---
+title: "Create Lead"
+api: "POST /create-lead"
+description: "Create a new consumer/lead when a borrower is declined due to credit issues"
+---
+
+## Overview
+
+Creates a new consumer inside Credzu when a borrower is declined due to credit issues. This is the primary endpoint for referring declined loan applicants to Credzu's credit repair workflow.
+
+## Request Body
+
+<ParamField body="first_name" type="string" required>
+  Borrower's first name
+</ParamField>
+
+<ParamField body="last_name" type="string" required>
+  Borrower's last name
+</ParamField>
+
+<ParamField body="email" type="string" required>
+  Borrower's email address (must be valid format)
+</ParamField>
+
+<ParamField body="phone" type="string" required>
+  Borrower's phone number (digits, hyphens, spaces, or + allowed)
+</ParamField>
+
+<ParamField body="partner_lead_id" type="string">
+  Your internal ID for this borrower. Recommended for tracking and webhook correlation.
+</ParamField>
+
+<ParamField body="fico_range" type="string">
+  FICO score range. Examples: `"500-549"`, `"550-579"`, `"580-619"`, `"620-659"`
+</ParamField>
+
+<ParamField body="loan_officer_id" type="string">
+  Identifier for the loan officer handling this borrower
+</ParamField>
+
+<ParamField body="notes" type="string">
+  Additional notes about the decline reason or borrower situation
+</ParamField>
+
+## Response
+
+<ResponseField name="success" type="boolean">
+  `true` if the lead was created successfully
+</ResponseField>
+
+<ResponseField name="message" type="string">
+  Status message
+</ResponseField>
+
+<ResponseField name="lead_id" type="integer">
+  Credzu's unique identifier for this lead. **Store this value** - it's used for all subsequent API calls and webhook callbacks.
+</ResponseField>
+
+<ResponseField name="partner_lead_id" type="string">
+  Echo of your partner_lead_id if provided
+</ResponseField>
+
+<RequestExample>
+
+```bash cURL
+curl -X POST https://credzu.com/wp-json/credzu/v1/create-lead \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Credzu-Key YOUR_API_KEY" \
+  -d '{
+    "partner_lead_id": "FBHL-55672",
+    "first_name": "John",
+    "last_name": "Smith",
+    "email": "john.smith@example.com",
+    "phone": "555-333-2222",
+    "fico_range": "580-619",
+    "loan_officer_id": "A.GLADSTONE",
+    "notes": "Declined for credit reasons - 48% DTI, low mid-score"
+  }'
+```
+
+```php PHP
+<?php
+function send_to_credzu($lead) {
+    $endpoint = "https://credzu.com/wp-json/credzu/v1/create-lead";
+    $apiKey = "YOUR_API_KEY";
+
+    $payload = array(
+        "partner_lead_id" => $lead["id"],
+        "first_name" => $lead["first_name"],
+        "last_name" => $lead["last_name"],
+        "email" => $lead["email"],
+        "phone" => $lead["phone"],
+        "fico_range" => isset($lead["fico_range"]) ? $lead["fico_range"] : null,
+        "loan_officer_id" => isset($lead["loan_officer_id"]) ? $lead["loan_officer_id"] : null,
+        "notes" => isset($lead["notes"]) ? $lead["notes"] : null
+    );
+
+    $ch = curl_init($endpoint);
+    curl_setopt_array($ch, array(
+        CURLOPT_POST => true,
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_HTTPHEADER => array(
+            "Content-Type: application/json",
+            "Authorization: Credzu-Key " . $apiKey
+        ),
+        CURLOPT_POSTFIELDS => json_encode($payload)
+    ));
+
+    $response = curl_exec($ch);
+    $status = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    curl_close($ch);
+
+    return json_decode($response, true);
+}
+```
+
+</RequestExample>
+
+<ResponseExample>
+
+```json 200
+{
+  "success": true,
+  "message": "Lead created",
+  "lead_id": 44921,
+  "partner_lead_id": "FBHL-55672"
+}
+```
+
+```json 400
+{
+  "success": false,
+  "error": {
+    "code": "INVALID_PAYLOAD",
+    "message": "first_name is required"
+  }
+}
+```
+
+```json 401
+{
+  "success": false,
+  "error": {
+    "code": "AUTH_FAILED",
+    "message": "Invalid API key"
+  }
+}
+```
+
+</ResponseExample>
+
+## What Happens Next
+
+After successfully creating a lead:
+
+1. Credzu sends a `lead_received` webhook to your registered endpoint
+2. The borrower receives onboarding communications from Credzu
+3. As the borrower progresses, you receive webhook events for each milestone
+4. When the borrower becomes mortgage-ready, you receive the `mortgage_ready` event
+
+<Info>
+Store the returned `lead_id` - you'll need it to look up lead status or correlate webhook events.
+</Info>

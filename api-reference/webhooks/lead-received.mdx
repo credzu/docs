@@ -1,0 +1,41 @@
+---
+title: "lead_received"
+description: "Sent when a lead is successfully created in Credzu"
+---
+
+## Overview
+
+The `lead_received` event is sent immediately after a partner successfully creates a lead via the [Create Lead](/api-reference/endpoints/create-lead) endpoint. This confirms that Credzu has received and stored the referral.
+
+## When It's Triggered
+
+- Immediately after a successful `POST /create-lead` request
+- Confirms the lead was stored in Credzu's system
+
+## Payload
+
+```json
+{
+  "event": "lead_received",
+  "timestamp": "2025-01-15T10:30:00Z",
+  "lead_id": 44921,
+  "partner_lead_id": "FBHL-55672",
+  "details": {}
+}
+```
+
+## Fields
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `event` | string | Always `"lead_received"` |
+| `timestamp` | string | ISO 8601 timestamp |
+| `lead_id` | integer | Credzu's unique identifier |
+| `partner_lead_id` | string | Your internal ID (if provided) |
+| `details` | object | Empty for this event |
+
+## Recommended Actions
+
+- Update your CRM to show the referral was successfully received
+- Log the `lead_id` for future reference
+- No immediate action required - this is a confirmation event

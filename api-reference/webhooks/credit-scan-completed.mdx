@@ -1,0 +1,46 @@
+---
+title: "credit_scan_completed"
+description: "Sent when the borrower completes their credit scan inside Credzu"
+---
+
+## Overview
+
+The `credit_scan_completed` event is sent when the borrower has successfully completed a credit scan within the Credzu platform. This establishes the baseline credit scores that will be used to measure improvement.
+
+## When It's Triggered
+
+- Borrower has authorized and completed a credit scan
+- Baseline credit scores are now available in Credzu
+- Credit repair providers can begin their work
+
+## Payload
+
+```json
+{
+  "event": "credit_scan_completed",
+  "timestamp": "2025-01-16T09:15:00Z",
+  "lead_id": 44921,
+  "partner_lead_id": "FBHL-55672",
+  "details": {}
+}
+```
+
+## Fields
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `event` | string | Always `"credit_scan_completed"` |
+| `timestamp` | string | ISO 8601 timestamp |
+| `lead_id` | integer | Credzu's unique identifier |
+| `partner_lead_id` | string | Your internal ID (if provided) |
+| `details` | object | Empty for this event |
+
+## Recommended Actions
+
+- Update CRM to reflect that baseline scores are established
+- Note that credit repair work can now begin
+- Expect future `score_update` events at 45-day intervals
+
+<Note>
+Actual credit scores are not included in this webhook for privacy reasons. Score data is only shared via `score_update` events, which include improvement gains rather than raw scores.
+</Note>

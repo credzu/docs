@@ -1,0 +1,45 @@
+---
+title: "client_engaged_in_chat"
+description: "Sent when the borrower sends messages in the chat interface"
+---
+
+## Overview
+
+The `client_engaged_in_chat` event is sent when the borrower actively engages in the Credzu chat interface. This indicates ongoing communication and engagement with the platform.
+
+## When It's Triggered
+
+- Borrower sends messages in the Credzu chat system
+- Indicates active engagement with credit repair providers or support
+
+## Payload
+
+```json
+{
+  "event": "client_engaged_in_chat",
+  "timestamp": "2025-01-20T16:45:00Z",
+  "lead_id": 44921,
+  "partner_lead_id": "FBHL-55672",
+  "details": {}
+}
+```
+
+## Fields
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `event` | string | Always `"client_engaged_in_chat"` |
+| `timestamp` | string | ISO 8601 timestamp |
+| `lead_id` | integer | Credzu's unique identifier |
+| `partner_lead_id` | string | Your internal ID (if provided) |
+| `details` | object | Empty for this event |
+
+## Recommended Actions
+
+- Use this as a signal of active borrower engagement
+- Update activity timestamps in your CRM
+- Generally a low-priority event, but useful for engagement tracking
+
+<Note>
+This event indicates the borrower is actively working with their credit repair provider. High chat engagement often correlates with successful outcomes.
+</Note>

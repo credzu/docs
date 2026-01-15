@@ -1,30 +1,68 @@
 ---
 title: Introduction
-description: "Credzu API Documentation"
+description: "Credzu API Documentation - Connect your lending platform to Credzu's credit repair escrow system"
 ---
 
 ## Welcome to Credzu API
 
-Credzu is a consumer protection platform for the credit repair industry. Our API allows partners to integrate with our escrow system, manage transactions, and access credit repair services programmatically.
+Credzu is a consumer protection platform for the credit repair industry. We operate as a neutral marketplace and escrow-based system where lenders and partners can safely refer declined borrowers, track their progress in real time, and seamlessly receive them back once credit eligibility is restored.
+
+### What is Credzu?
+
+When a loan application is declined due to credit issues, Credzu provides a "credit rescue loop" - borrowers are referred to vetted credit repair providers, their progress is tracked, and they're returned to you once mortgage-ready.
+
+**Key features:**
+- **Escrow Protection** - Funds are only released to credit repair providers after verified score improvements
+- **Real-Time Tracking** - Monitor borrower progress at every milestone
+- **Automated Workflow** - No manual referrals, emails, or copy/paste errors
+- **Compliance Built-In** - Adherence to federal and state credit repair laws
 
 ### Base URL
 
 ```
-https://api.credzu.com/v1
+https://credzu.com/wp-json/credzu/v1
 ```
 
-### What you can do
+### Sandbox Environment
 
-- **Escrow Management** - Create and manage escrow transactions
-- **Consumer Data** - Access consumer profiles and credit information
-- **Payments** - Handle payment processing and disbursements
-- **Webhooks** - Receive real-time notifications on transaction events
+```
+https://sandbox.credzu.com/wp-json/credzu/v1
+```
+
+<Info>
+Use the sandbox environment for testing. No real transactions are processed and events are simulated.
+</Info>
+
+### Quick Links
 
 <CardGroup cols={2}>
   <Card title="Authentication" icon="key" href="/authentication">
-    Learn how to authenticate API requests
+    Learn how to authenticate API requests using your partner API key
   </Card>
-  <Card title="API Reference" icon="code" href="/api-reference/introduction">
-    Explore available endpoints
+  <Card title="Create Lead" icon="user-plus" href="/api-reference/endpoints/create-lead">
+    Send declined borrowers to Credzu automatically
+  </Card>
+  <Card title="Webhooks" icon="webhook" href="/api-reference/webhooks/overview">
+    Receive real-time status updates as borrowers progress
+  </Card>
+  <Card title="Error Handling" icon="triangle-exclamation" href="/errors">
+    Understand error codes and how to handle them
   </Card>
 </CardGroup>
+
+### How It Works
+
+<Steps>
+  <Step title="Partner sends declined borrower">
+    Use `POST /create-lead` to automatically refer a borrower when their loan is declined due to credit issues.
+  </Step>
+  <Step title="Borrower enters Credzu workflow">
+    Credzu onboards the borrower, performs credit scans, and connects them with credit repair providers.
+  </Step>
+  <Step title="Partner receives status updates">
+    Webhooks notify you at every milestone: account created, contract signed, escrow funded, score updates.
+  </Step>
+  <Step title="Borrower becomes mortgage-ready">
+    When credit criteria are met, you receive the `mortgage_ready` event and can re-engage the borrower.
+  </Step>
+</Steps>
