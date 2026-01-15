@@ -3,9 +3,9 @@
   "theme": "willow",
   "name": "Credzu",
   "colors": {
-    "primary": "#16A34A",
-    "light": "#22C55E",
-    "dark": "#15803D"
+    "primary": "#2f55d5",
+    "light": "#5b7be6",
+    "dark": "#1e3a8a"
   },
   "favicon": "/favicon.svg",
   "navigation": {
