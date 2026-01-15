@@ -1,0 +1,41 @@
+---
+title: Authentication
+description: "How to authenticate with the Credzu API"
+---
+
+## API Keys
+
+All API requests require authentication using an API key. Include your API key in the request header:
+
+```bash
+Authorization: Bearer YOUR_API_KEY
+```
+
+### Getting your API key
+
+1. Log in to your [Credzu Dashboard](https://credzu.com)
+2. Navigate to **Settings** > **API Keys**
+3. Generate a new API key
+
+<Warning>
+Keep your API keys secure. Do not share them in public repositories or client-side code.
+</Warning>
+
+### Example request
+
+```bash
+curl -X GET https://api.credzu.com/v1/transactions \
+  -H "Authorization: Bearer YOUR_API_KEY" \
+  -H "Content-Type: application/json"
+```
+
+### Environments
+
+| Environment | Base URL |
+|-------------|----------|
+| Production  | `https://api.credzu.com/v1` |
+| Sandbox     | `https://sandbox.api.credzu.com/v1` |
+
+<Info>
+Use the sandbox environment for testing. No real transactions are processed.
+</Info>

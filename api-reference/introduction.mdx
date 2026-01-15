@@ -1,0 +1,41 @@
+---
+title: API Reference
+description: "Complete reference for the Credzu API"
+---
+
+## Overview
+
+The Credzu API is organized around REST. Our API accepts JSON-encoded request bodies, returns JSON-encoded responses, and uses standard HTTP response codes.
+
+### Response format
+
+All responses follow this structure:
+
+```json
+{
+  "success": true,
+  "data": { },
+  "message": "Operation completed successfully"
+}
+```
+
+### Error handling
+
+Errors return appropriate HTTP status codes:
+
+| Status | Description |
+|--------|-------------|
+| `200`  | Success |
+| `400`  | Bad Request - Invalid parameters |
+| `401`  | Unauthorized - Invalid API key |
+| `404`  | Not Found - Resource doesn't exist |
+| `429`  | Rate Limited - Too many requests |
+| `500`  | Server Error |
+
+### Rate limits
+
+API requests are limited to **100 requests per minute** per API key. If you exceed this limit, you'll receive a `429` response.
+
+---
+
+*Endpoint documentation coming soon.*
